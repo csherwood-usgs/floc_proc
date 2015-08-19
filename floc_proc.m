@@ -21,12 +21,15 @@ s_rho = ncread(url,'s_rho')
 s_w = ncread(url,'s_w')
 %% this is a 1D run, so use i=3 and j =4
 i=3; j=4;
+h = squeeze(ncread(url,'h',[i j],[Inf Inf]));
+dzr = diff(s_w)
 ubar = squeeze(ncread(url,'ubar',[i j 1],[1 1 Inf]));
-zeta = squeeze(ncread(url,'zeta'));
+%zeta = squeeze(ncread(url,'zeta'));
 zeta = squeeze(ncread(url,'zeta',[i j 1],[1 1 Inf]));
 % vbar is tiny...ignore
 % vbar = squeeze(ncread(url,'vbar',[i j 1],[1 1 Inf]));
-
+   dzr = shiftdim(repmat( diff(s_w),1,nr,nc),1);
+   hw = zeta-h;
 %% read 15 mud classes and mudmass in the bed
 if(0)
 nt = length(ocean_time);
