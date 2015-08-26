@@ -1,17 +1,20 @@
 % floc_proc.m - Script to read and plot ROMS .his files
+clear
 
-
-url = 'http://geoport.whoi.edu/thredds/dodsC/peach/data2/aretxabaleta/MVCO/floc/nofloc_test35/ocean_his.nc'
-url = 'ocean_his.nc'
+cas = 47
+url = sprintf('ocean_his%2d.nc',cas)
+% url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
+% url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
+% Read in NST and Nbed instead of loading in huge files to infer their size
 ncid = netcdf.open(url,'NOWRITE')
 dimid = netcdf.inqDimID(ncid,'NST')
 netcdf.inqDim(ncid,dimid)
 [dimname,NST]=netcdf.inqDim(ncid,dimid)
-dimid = netcdf.inqDimID(ncid,'NBED')
+dimid = netcdf.inqDimID(ncid,'Nbed')
 netcdf.inqDim(ncid,dimid)
-[dimname,NBED]=netcdf.inqDim(ncid,dimid)
+[dimname,Nbed]=netcdf.inqDim(ncid,dimid)
 netcdf.close(ncid)
-%%
+%% Read in basic info
 ocean_time = ncread(url,'ocean_time');
 h = ncread(url,'h');
 %lonr = ncread(url,'lon_rho');
@@ -31,11 +34,13 @@ s_rho = ncread(url,'s_rho')
 s_w = ncread(url,'s_w')
 nt = length(ocean_time);
 nz = length(s_rho);
-NST = 15;
-NBED = 3;
+%% Read in sediment sizes
+fdiam = ncread(url,'Sd50')
+ws = ncread(url,'Wsed')
+rhos = ncread(url,'Srho')
 %% this is a 1D run, so use i=3 and j =4
 i=3; j=4;
-h = squeeze(ncread(url,'h',[i j],[Inf Inf]));
+h = squeeze(ncread(url,'h',[i j],[1 1]));
 dzr = diff(s_w)
 ubar = squeeze(ncread(url,'ubar',[i j 1],[1 1 Inf]));
 %zeta = squeeze(ncread(url,'zeta'));
@@ -44,28 +49,52 @@ zeta = squeeze(ncread(url,'zeta',[i j 1],[1 1 Inf]));
 % vbar = squeeze(ncread(url,'vbar',[i j 1],[1 1 Inf]));
 dzr = diff(s_w);
 hw = zeta-h;
+%% get time series of depths at one location
+%igrid = 1 % rho points
+%igrid = 3 % upoints
+%igrid = 4 % vpoints
+%igrid = 5 % w-velocity points
+z_r = NaN*ones(nz,nt);
+z_w = NaN*ones(nz+1,nz);
+for n=1:nt
+z_r(:,n)=squeeze(set_depth(Vtransform, Vstretching, theta_s, theta_b, hc, nz, ...
+                1, h, zeta(n),0))';
+z_w(:,n)=squeeze(set_depth(Vtransform, Vstretching, theta_s, theta_b, hc, nz, ...
+                 5, h, zeta(n),0))';
+end
+dzw = diff(z_w,1,1);
+tz = repmat(ocean_time',50,1);
 %% read 15 mud classes and mudmass in the bed
 % TODO: complete this to make an airtight check on mass conservation
-if(0)
+% (use evaluate_sediment.m to do this)
 
-m = zeros( nsed, 8, 7, nz, nt);
-bm = zeros( nsed, 8, 7, nb, nt);
-mst = zeros(8,7,nt)
-for n=1:nsed
-   ncname = sprintf('mud_%02d',n)
-   ncname2 = sprintf('mudmass_%02d',n)
-   %m(n,:,:)=squeeze(ncread(url,ncname,[i j 1 1],[1 1 Inf Inf]));
-   m(n,:,:,:,:)=squeeze(ncread(url,ncname));
-   bm(n,:,:,:,:)=squeeze(ncread(url,ncname2));
-end
-end
 %% read 15 mud classes, one cell only, for 1D results
 nt = length(ocean_time);
 nz = length(s_rho);
 NST = 15; 
-NBED = 3;
+Nbed = 3;
 m = zeros( NST, nz, nt);
 for n=1:NST
    ncname = sprintf('mud_%02d',n)
    m(n,:,:)=squeeze(ncread(url,ncname,[i j 1 1],[1 1 Inf Inf]));
 end
+muds = squeeze(sum(m));
+summuds = sum( muds.*dzw);
+%% total conc
+s2d = 1. /(3600.*24.)
+figure(1); clf
+pcolorjw( s2d*tz, h+z_w, log10(muds+eps))
+colorbar
+title('log_{10} Total Concentration')
+% fraction-weighted ws
+wst = squeeze(sum(repmat(ws,1,nz,nt).*m)./sum(m));
+figure(2); clf
+pcolorjw( s2d*tz, h+z_w, 1e3*wst)
+colorbar
+title('Settling Velocity (mm/s)')
+% fraction-weighted size
+figure(3); clf
+fdiamt = squeeze(sum(repmat(fdiam,1,nz,nt).*m)./sum(m));
+pcolorjw( s2d*tz, h+z_w, 1e6*fdiamt)
+colorbar
+title('Diameter (\mum)')
