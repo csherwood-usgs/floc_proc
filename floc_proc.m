@@ -64,10 +64,6 @@ z_w(:,n)=squeeze(set_depth(Vtransform, Vstretching, theta_s, theta_b, hc, nz, ..
 end
 dzw = diff(z_w,1,1);
 tz = repmat(ocean_time',50,1);
-%% read 15 mud classes and mudmass in the bed
-% TODO: complete this to make an airtight check on mass conservation
-% (use evaluate_sediment.m to do this)
-
 %% read 15 mud classes, one cell only, for 1D results
 nt = length(ocean_time);
 nz = length(s_rho);
@@ -98,22 +94,3 @@ fdiamt = squeeze(sum(repmat(fdiam,1,nz,nt).*m)./sum(m));
 pcolorjw( s2d*tz, h+z_w, 1e6*fdiamt)
 colorbar
 title('Diameter (\mum)')
-%% compare with observations
-rho0 = ncread(url,'rho0')
-ustrc = (squeeze(ncread(url,'bustrc',[i j 1],[1 1 Inf])).^2+squeeze(ncread(url,'bvstrc',[i j 1],[1 1 Inf])).^2).^(.5);
-ustrcwm = (squeeze(ncread(url,'bustrcwmax',[i j 1],[1 1 Inf])).^2+squeeze(ncread(url,'bvstrcwmax',[i j 1],[1 1 Inf])).^2).^(.5);
-load ustar_av
-%%
-figure(4); clf
-h1=plot(ustar_av.dn-ustar_av.dn(1),rho0*ustar_av.ustrc.^2);
-set(h1,'linewidth',3,'color',[.3 .3 .3]);
-hold on
-h2=plot(ustar_av.dn-ustar_av.dn(1),rho0*ustar_av.us.^2);
-set(h2,'linewidth',3,'color',[.2 .2 .2]);
-h3=plot(ustar_av.dn-ustar_av.dn(1),rho0*ustar_av.ustrr.^2);
-set(h3,'linewidth',3,'color',[.3 .3 .3]);
-h4=plot(s2d*tz,ustrc);
-set(h4,'linewidth',3,'color',[.4 .4 .6]);
-h5=plot(s2d*tz,ustrcwm);
-set(h5,'linewidth',3,'color',[.4 .4 .6]);
-ylabel('Stress (Pa)')
