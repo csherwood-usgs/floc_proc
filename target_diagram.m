@@ -14,7 +14,7 @@ function [RMSD_star,BIAS,R] = target_diagram( model, data, iplot, ou )
 %    R         - correlation coeffcient (eqn 1)
 
 % Jolliff et al., 2009, Summary diagrams for coupled hydrodynamic-ecosystem model
-% skill assessment. Journal of Marine Systems 76 (2009) 64–82.
+% skill assessment. Journal of Marine Systems 76 (2009) 64-82.
 % DOI: 10.1016/j.jmarsys.2008.05.014
 
 % csherwood@usgs.gov
