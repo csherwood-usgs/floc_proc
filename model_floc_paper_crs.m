@@ -13,18 +13,21 @@
 %3 The normalise total scattering and viscous cross-section is calculated for the primary, intermediate and fully formed flocs as a function of particle size
 %4 The average normalise total scattering and viscous cross-section is calculated for the primary, intermediate and fully formed flocs as a function of particle size
 %5 Plots of the results are given
-close all
-clear all
+% close all
+% clear all
 f = 3e6;
 
 nz1=1e5;
 a=logspace(-10,-2,nz1);
+
+rhow=1000;co=1480;rhos=2650;
 x=2*pi*a*f/co;
 dx=diff(x); x=x(1:nz1-1); a=a(1:nz1-1);
 nz=100;
 aa=logspace(-9,-3,nz);
 xx=2*pi*aa*f/co;
-rhow=1000;co=1480;rhos=2650;
+
+
 % function [f,chi,x]=intrinsic_fchi( f, a, rhof, rhos, rhow )
 % defining primary parameters
 
@@ -35,10 +38,13 @@ gk=rhos/rhow;
 hk=ck/co;
 
 
-% effective density
-rhoex=1e-3./(a.^1); %choosen for illustration
+% Follwing formulations are for form of rhoex( a );
+% rhoex=1e-3./(a.^1); %choosen for illustration
 % limit to realistic values
-rhoex(rhoex>(rhos-rhow))=rhos-rhow;
+% rhoex(rhoex>(rhos-rhow))=rhos-rhow;
+
+% effective density
+rhoex = rhos-rhow;
 rhoex(rhoex<0)=0;
 
 % gamma_o  zeta_o values
@@ -87,7 +93,7 @@ axis([1e-4 1e1 1e-7 1e-0])
 set(gca,'fontsize',mn)
 text(5,0.4,'a','fontsize',mn)
 loglog(axlng,aflng,'--k')
-hh=legend(' \delta=0.0','\delta=0.5')
+hh=legend(' \delta=0.0','\delta=0.5');
 set(hh,'fontsize',12)
 
 %% **************************   atten   ************************
@@ -141,6 +147,4 @@ set(gca,'fontsize',mn)
 %title('Normalised total scattering cross-section  - attenuation','fontsize',mn)
 text(5,0.4,'b','fontsize',mn)
 loglog(axlng,achilngo,'--k')
-
-
 

@@ -1,7 +1,7 @@
 % floc_proc.m - Script to read and plot ROMS .his files
 clear
 
-cas = 50
+cas = 61
 %url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
 url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
@@ -14,6 +14,13 @@ dimid = netcdf.inqDimID(ncid,'Nbed')
 netcdf.inqDim(ncid,dimid)
 [dimname,Nbed]=netcdf.inqDim(ncid,dimid)
 netcdf.close(ncid)
+% some cases have extra non-depositing non-cohesive sediment and a few
+% classes that interact with the bed
+if cas == 61
+NNN = 15 % these don't settle
+NND = 4 % these interact with the bed
+NST = NST-(NNN+NND)
+end
 %% Read in basic info
 ocean_time = ncread(url,'ocean_time');
 h = ncread(url,'h');
@@ -38,6 +45,8 @@ nz = length(s_rho);
 fdiam = ncread(url,'Sd50')
 ws = ncread(url,'Wsed')
 rhos = ncread(url,'Srho')
+tau_ce = ncread(url,'tau_ce')
+tau_cd = ncread(url,'tau_cd')
 %% this is a 1D run, so use i=3 and j =4
 i=3; j=4;
 h = squeeze(ncread(url,'h',[i j],[1 1]));
@@ -67,8 +76,7 @@ tz = repmat(ocean_time',50,1);
 %% read 15 mud classes, one cell only, for 1D results
 nt = length(ocean_time);
 nz = length(s_rho);
-NST = 15; 
-Nbed = 3;
+
 m = zeros( NST, nz, nt);
 for n=1:NST
    ncname = sprintf('mud_%02d',n)
@@ -80,17 +88,74 @@ summuds = sum( muds.*dzw);
 s2d = 1. /(3600.*24.)
 figure(1); clf
 pcolorjw( s2d*tz, h+z_w, log10(muds+eps))
+caxis([-2 2])
 colorbar
-title('log_{10} Total Concentration')
+title('log_{10} Total Floc Concentration')
+
 % fraction-weighted ws
-wst = squeeze(sum(repmat(ws,1,nz,nt).*m)./sum(m));
+wst = squeeze(sum(repmat(ws(1:NST),1,nz,nt).*m)./sum(m));
 figure(2); clf
 pcolorjw( s2d*tz, h+z_w, 1e3*wst)
+
 colorbar
-title('Settling Velocity (mm/s)')
+title('Floc Settling Velocity (mm/s)')
 % fraction-weighted size
 figure(3); clf
-fdiamt = squeeze(sum(repmat(fdiam,1,nz,nt).*m)./sum(m));
+fdiamt = squeeze(sum(repmat(fdiam(1:NST),1,nz,nt).*m)./sum(m));
 pcolorjw( s2d*tz, h+z_w, 1e6*fdiamt)
 colorbar
-title('Diameter (\mum)')
+title('Floc Diameter (\mum)')
+%% read 15 non-depositing classes, one cell only, for 1D results
+snn = zeros( NNN, nz, nt);
+for n=1:NNN
+   ncname = sprintf('sand_%02d',n)
+   snn(n,:,:)=squeeze(ncread(url,ncname,[i j 1 1],[1 1 Inf Inf]));
+end
+snns = squeeze(sum(snn));
+sumsnns = sum( snns.*dzw);
+%% total conc
+figure(4); clf
+pcolorjw( s2d*tz, h+z_w, log10(snns+eps))
+colorbar
+title('Non-depositing Sand log_{10} Total Concentration')
+% fraction-weighted ws
+wst = squeeze(sum(repmat(ws(NST+1:NST+NNN),1,nz,nt).*snn)./sum(snn));
+figure(5); clf
+pcolorjw( s2d*tz, h+z_w, 1e3*wst)
+colorbar
+title('Non-depositing Sand Settling Velocity (mm/s)')
+% fraction-weighted size
+figure(6); clf
+fdiamt = squeeze(sum(repmat(fdiam(NST+1:NST+NNN),1,nz,nt).*snn)./sum(snn));
+pcolorjw( s2d*tz, h+z_w, 1e6*fdiamt)
+colorbar
+title('Non-depositing Sand Diameter (\mum)')
+%% read 4 depositing classes, one cell only, for 1D results
+snd = zeros( NND, nz, nt);
+ic = 0;
+for n=NNN+1:NNN+NND
+   ic = ic+1
+   ncname = sprintf('sand_%02d',n)
+   snd(ic,:,:)=squeeze(ncread(url,ncname,[i j 1 1],[1 1 Inf Inf]));
+end
+snds = squeeze(sum(snd));
+sumsnds = sum( snds.*dzw);
+%% total conc
+s2d = 1. /(3600.*24.)
+figure(7); clf
+pcolorjw( s2d*tz, h+z_w, log10(snds+eps))
+caxis([-2 2])
+colorbar
+title('Sand log_{10} Total Concentration')
+% fraction-weighted ws
+wssdt = squeeze(sum(repmat(ws(NNN+NST+1:NST+NNN+NND),1,nz,nt).*snd)./sum(snd));
+figure(8); clf
+pcolorjw( s2d*tz, h+z_w, 1e3*wssdt)
+colorbar
+title('Sand Settling Velocity (mm/s)')
+% fraction-weighted size
+figure(9); clf
+fdiamsdt = squeeze(sum(repmat(fdiam(NNN+NST+1:NST+NNN+NND),1,nz,nt).*snd)./sum(snd));
+pcolorjw( s2d*tz, h+z_w, 1e6*fdiamsdt)
+colorbar
+title('Sand Diameter (\mum)')

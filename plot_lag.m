@@ -13,7 +13,7 @@ ok = find(~isnan(x+y));
 x = x(ok);
 y = y(ok);
 [C,lags]=xcorr(x,y,'coeff');
-plot(lags,C)
+plot(lags,C,'linewidth',2)
 izero = find(lags==0);
 zeroC = C(izero);
 [maxC,imaxC]=max(C);
@@ -36,7 +36,7 @@ x = x(ok);
 y = y(ok);
 [C,lags]=xcorr(x,y,'coeff');
 hold on
-plot(lags,C)
+plot(lags,C,'linewidth',2)
 ylabel('Cross-correlation \itr')
 xlabel(['Lag (',dtunits,')'])
 axis([-24 24 0 1])

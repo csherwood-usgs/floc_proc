@@ -2,7 +2,7 @@
 % floc_proc.m - Script to read and plot ROMS .his files
 clear
 
-cas = 50
+cas = 61
 %url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
 url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
@@ -59,9 +59,9 @@ set(h5,'linewidth',3,'color',[.5 .5 .8]);
 ylabel('Stress (Pa)')
 %% target diagram
 figure(2); clf
-[RMSD_star,BIAS,Rustrc]=target_diagram( ustrc, rho0*ustar_av.ustrc.^2, 1 );
-figure(3); clf
-[RMSD_star,BIAS,Rustrcw]=target_diagram( ustrcwm, rho0*ustar_av.ustrr.^2, 1 );
+[RMSD_star,BIAS,Rustrc]=target_diagram( ustrc, rho0*ustar_av.ustrc.^2, 1, [.2 .2 .9] );
+%figure(3); clf
+[RMSD_star,BIAS,Rustrcw]=target_diagram( ustrcwm, rho0*ustar_av.ustrr.^2, 1 ,[.9 .2 .2]);
 figure(4); clf
 plot([0 2],[0 2],'--k')
 hold on

@@ -1,4 +1,4 @@
-function [RMSD_star,BIAS,R] = target_diagram( model, data, iplot, ou )
+function [RMSD_star,BIAS,R] = target_diagram( model, data, iplot, c, ou )
 % [RMSD_star, BIAS, R] = target_diagram( model, data, iplot, ou)
 %
 % Input:
@@ -7,6 +7,7 @@ function [RMSD_star,BIAS,R] = target_diagram( model, data, iplot, ou )
 %            (model and data must be same size, shape, and units)
 %            (NaNs in either will be ignored)
 %    iplot - 0 = no plot (default), 1 = plot
+%    c     - color
 %    ou    - observational uncertainty in normalized units (optional)
 % Returns:
 %    RMDS_star - signed unbiased RMS difference (eqn 8)
@@ -21,6 +22,7 @@ function [RMSD_star,BIAS,R] = target_diagram( model, data, iplot, ou )
 % 28 August 2015
 if(exist('iplot','var')~=1),iplot = 0; end
 if(exist('ou','var')~=1),ou = NaN; end
+if(exist('c','var')~=1),c = [.2 .2 .2]; end
 ok = find( ~isnan( model(:)+data(:) ) );
 N = length(model(ok));
 sigm = std(model(ok));
@@ -52,7 +54,7 @@ if(iplot)
       h=circle(ou,0,0,'--k');
    end
    h=scatter(RMSD_star,BIAS,54,R,'filled');
-   set(h,'markeredgecolor',[.6 .6 .6]);
+   set(h,'markeredgecolor',c);
    caxis([-1,1]);
    axis([-2 2 -2 2]);
    axis square
