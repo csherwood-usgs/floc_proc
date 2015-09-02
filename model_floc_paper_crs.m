@@ -18,27 +18,40 @@
 close all
 clear all
 
-% defining primary parameters
-co=1480;
-rho0=1000;
-ck=5550;
-rhok=2600;
+f=3e6; % frequency
+aolist = logspace(-9, -3, 10 );
+rhoflist = 1000+1e-3./(aolist.^1); %choosen for illustration
+dsigma=0.5;
+for i=1:length(aolist)
+   ao = aolist(i);
+   rhof = rhoflist(i);
+% Input
+%    f - frequency in Hz
+%    ao - average particle radius
+%    rhof - particle density
+%    dsigma - width of lognormal distribution
+
+% define primary parameters
+co=1480;   % speed of sound in water
+rho0=1000; % density of water
+ck=5550;   % speed of sound in particle
+rhok=2600; % density of particle
 Co=1/(rho0*co^2);
 Ck=1/(rhok*ck^2); %compressibility
 gk=rhok/rho0;
 hk=ck/co;
 
-f=3e6; % frequency
-
 nz1=1e5;
 a=logspace(-10,-2,nz1);
 x=2*pi*a*f/co;
-dx=diff(x); x=x(1:nz1-1); a=a(1:nz1-1);
-nz=100; aa=logspace(-9,-3,nz);
-xx=2*pi*aa*f/co;
+dx=diff(x);
+% trim to match lenght of dx:
+x=x(1:nz1-1); a=a(1:nz1-1);
+
+xo=2*pi*ao*f ./co;
 
 % effective density
-rhoex=1e-3./(a.^1); %choosen for illustration
+rhoex = rhof-rho0
 
 % gamma_o  zeta_o values
 beta1=1.02; % gamma_o
@@ -48,68 +61,58 @@ beta2=1.02; % zeta_o
 zz=find(rhoex>(rhok-rho0)); rhoex(zz)=(rhok-rho0);
 % not letting effective density go below zero
 zz=find(rhoex<0); rhoex(zz)=0;
-g=1+rhoex/(rho0);
-zz=find(g<beta1); g(zz)=beta1;
-phi=(gk-g)/(gk-1);
+gam=1+rhoex/(rho0);
+zz=find(gam<beta1); gam(zz)=beta1;
+phi=(gk-gam)/(gk-1);
 
-
-%wood expression
+% Wood's expression - Eqn 9
 vw=((phi*rho0+(1-phi)*rhok).*(phi*Co+(1-phi)*Ck)).^(-0.5);
 h=vw/co;
 zz=find(h<beta2); h(zz)=beta2;
-e=(g.*h.^2);
-
-
-figure(1),orient tall
-
 
 % **************************   form function   ************************
 % form function f_fi
-% g is gamma - this is unnumbered Clay & Medwin eqn on p. 65
-kf=2*abs((e-1)./(3*e)+(g-1)./(2*g+1)); 
+% unnumbered Clay & Medwin eqn on p. 65
+e=(gam.*h.^2);
+kf=2*abs((e-1)./(3*e)+(gam-1)./(2*gam+1)); 
 alpha1=1.2; % called epsilon_1 on p. 85
 ffi=(kf.*x.^2)./(1+alpha1*x.^2); % Eqn. 6a
 
-subplot(2,1,1),
-loglog(x,ffi,'k'), hold on
-xlabel('x_o','fontsize',15), ylabel('f_{ho}','fontsize',15)
-axis([1e-4 1e1 1e-7 1e-0])
-set(gca,'fontsize',15)
-text(5,0.4,'a','fontsize',15)
+% Average form function for lognormal distribution f_ho
 
-
-
-% ave form function for lognormal distribution f_ho
-dsigma=0.5;
-%Lognormal
-for jj=1:nz;
-   xo=xx(jj);
+% of all x around each xo
    sigma=dsigma*xo;
    mu=log((xo.^2)./sqrt(xo.^2+sigma.^2));
    sigman=sqrt(log((sigma/xo).^2+1));
    plognorm=(1./(x*sigman*sqrt(2*pi))).*exp(-((log(x)-mu).^2)/(2*sigman.^2));
-   axlng(jj)=sum(x.*plognorm.*dx);
+   axlng(i)=sum(x.*plognorm.*dx);
    ax3=sum((x.^3).*plognorm.*dx);
    axf=sum(((x.^2).*(ffi.^2).*dx).*plognorm);
-   aflng(jj)=sqrt((axlng(jj).*axf)./ax3);
+   aflng(i)=sqrt((axlng(i).*axf)./ax3);
+
 end
 
+figure(1),orient tall
+subplot(2,1,1),
+%loglog(xlist,ffilist,'k'), hold on
+xlabel('x_o','fontsize',15), ylabel('f_{ho}','fontsize',15)
+axis([1e-4 1e1 1e-7 1e-0])
+set(gca,'fontsize',15)
+text(5,0.4,'a','fontsize',15)
 loglog(axlng,aflng,'--k')
-
-
 hh=legend(' \delta=0.0','\delta=0.5')
 set(hh,'fontsize',12)
 
 %% **************************   atten   ************************
 % chi_fi scattering
 % second Clay & Medwin eqn. on p. 85
-kfalfa=2*(((e-1)./(3*e)).^2+(1/3)*((g-1)./(2*g+1)).^2);
+kfalfa=2*(((e-1)./(3*e)).^2+(1/3)*((gam-1)./(2*gam+1)).^2);
 chifi=(kfalfa.*x.^4)./(1-1.0*x+1.5*x.^2+kfalfa.*x.^4); % Eqn. 6b
 
 %viscous atten
 % chi_hs scattering
 
-rho=g; %rhok/rho0;
+rho=gam; %rhok/rho0;
 v=1e-6; c=1480;
 
 da=c*dx/(2*pi*f);
