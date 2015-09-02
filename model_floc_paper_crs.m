@@ -1,4 +1,5 @@
-%n:\mat5work\sizescatter\floc\model_floc_paper.m 26/06/14
+% model_floc_paper_crs.m
+% CRS comments on original code from:
 
 %This software is in support of the paper
 % 'Modelling acoustic scattering by suspended flocculating sediments'
@@ -7,69 +8,78 @@
 % The program is for educational use and not for comercial purposes.
 % The code is unsupported.
 
-
 %1 The form function is calculated for the primary, intermediate and fully formed flocs as a function of particle size
 %2 The average form function is calculated for the primary, intermediate and fully formed flocs as a function of particle size
 %3 The normalise total scattering and viscous cross-section is calculated for the primary, intermediate and fully formed flocs as a function of particle size
 %4 The average normalise total scattering and viscous cross-section is calculated for the primary, intermediate and fully formed flocs as a function of particle size
 %5 Plots of the results are given
-% close all
-% clear all
-f = 3e6;
+
+
+close all
+clear all
+
+% defining primary parameters
+co=1480;
+rho0=1000;
+ck=5550;
+rhok=2600;
+Co=1/(rho0*co^2);
+Ck=1/(rhok*ck^2); %compressibility
+gk=rhok/rho0;
+hk=ck/co;
+
+f=3e6; % frequency
 
 nz1=1e5;
 a=logspace(-10,-2,nz1);
-
-rhow=1000;co=1480;rhos=2650;
 x=2*pi*a*f/co;
 dx=diff(x); x=x(1:nz1-1); a=a(1:nz1-1);
-nz=100;
-aa=logspace(-9,-3,nz);
+nz=100; aa=logspace(-9,-3,nz);
 xx=2*pi*aa*f/co;
 
-
-% function [f,chi,x]=intrinsic_fchi( f, a, rhof, rhos, rhow )
-% defining primary parameters
-
-ck=5550; 
-Co=1/(rhow*co^2); % compressibility
-Ck=1/(rhos*ck^2);
-gk=rhos/rhow;
-hk=ck/co;
-
-
-% Follwing formulations are for form of rhoex( a );
-% rhoex=1e-3./(a.^1); %choosen for illustration
-% limit to realistic values
-% rhoex(rhoex>(rhos-rhow))=rhos-rhow;
-
 % effective density
-rhoex = rhos-rhow;
-rhoex(rhoex<0)=0;
+rhoex=1e-3./(a.^1); %choosen for illustration
 
 % gamma_o  zeta_o values
 beta1=1.02; % gamma_o
-beta2=1.02; %zeta_o
+beta2=1.02; % zeta_o
 
-g=1+rhoex/(rhow);
-g(g<beta1)=beta1;
+% maximum physical value for effective density
+zz=find(rhoex>(rhok-rho0)); rhoex(zz)=(rhok-rho0);
+% not letting effective density go below zero
+zz=find(rhoex<0); rhoex(zz)=0;
+g=1+rhoex/(rho0);
+zz=find(g<beta1); g(zz)=beta1;
 phi=(gk-g)/(gk-1);
 
-% Calculate h (zeta in Eqn. 9) using Wood expression
-vw=((phi*rhow+(1-phi)*rhos).*(phi*Co+(1-phi)*Ck)).^(-0.5);
+
+%wood expression
+vw=((phi*rho0+(1-phi)*rhok).*(phi*Co+(1-phi)*Ck)).^(-0.5);
 h=vw/co;
-%zz=find(h<beta2); h(zz)=beta2;
-h(h<beta2)=beta2;
+zz=find(h<beta2); h(zz)=beta2;
 e=(g.*h.^2);
 
+
+figure(1),orient tall
+
+
 % **************************   form function   ************************
-% form function f_h
+% form function f_fi
+% g is gamma - this is unnumbered Clay & Medwin eqn on p. 65
+kf=2*abs((e-1)./(3*e)+(g-1)./(2*g+1)); 
+alpha1=1.2; % called epsilon_1 on p. 85
+ffi=(kf.*x.^2)./(1+alpha1*x.^2); % Eqn. 6a
 
-kf=2*abs((e-1)./(3*e)+(g-1)./(2*g+1)); % Eqn 
-alpha1=1.2;
-fmj=(kf.*x.^2)./(1+alpha1*x.^2); % Eqn. 6a
+subplot(2,1,1),
+loglog(x,ffi,'k'), hold on
+xlabel('x_o','fontsize',15), ylabel('f_{ho}','fontsize',15)
+axis([1e-4 1e1 1e-7 1e-0])
+set(gca,'fontsize',15)
+text(5,0.4,'a','fontsize',15)
 
-% avg form function for lognormal distribution f_ho
+
+
+% ave form function for lognormal distribution f_ho
 dsigma=0.5;
 %Lognormal
 for jj=1:nz;
@@ -80,38 +90,33 @@ for jj=1:nz;
    plognorm=(1./(x*sigman*sqrt(2*pi))).*exp(-((log(x)-mu).^2)/(2*sigman.^2));
    axlng(jj)=sum(x.*plognorm.*dx);
    ax3=sum((x.^3).*plognorm.*dx);
-   axf=sum(((x.^2).*(fmj.^2).*dx).*plognorm);
+   axf=sum(((x.^2).*(ffi.^2).*dx).*plognorm);
    aflng(jj)=sqrt((axlng(jj).*axf)./ax3);
 end
 
-mn=15; % font size
-figure;,orient tall
-subplot(2,1,1),
-loglog(x,fmj,'k'), hold on
-xlabel('x_o','fontsize',mn), ylabel('f_{ho}','fontsize',mn)
-axis([1e-4 1e1 1e-7 1e-0])
-set(gca,'fontsize',mn)
-text(5,0.4,'a','fontsize',mn)
 loglog(axlng,aflng,'--k')
-hh=legend(' \delta=0.0','\delta=0.5');
+
+
+hh=legend(' \delta=0.0','\delta=0.5')
 set(hh,'fontsize',12)
 
 %% **************************   atten   ************************
-% chi_h scattering
-kalfa=2*(((e-1)./(3*e)).^2+(1/3)*((g-1)./(2*g+1)).^2);
-chishc=(kalfa.*x.^4)./(1-1.0*x+1.5*x.^2+kalfa.*x.^4);
-%subplot(2,1,2), loglog(x,chishc,':k'), hold on
+% chi_fi scattering
+% second Clay & Medwin eqn. on p. 85
+kfalfa=2*(((e-1)./(3*e)).^2+(1/3)*((g-1)./(2*g+1)).^2);
+chifi=(kfalfa.*x.^4)./(1-1.0*x+1.5*x.^2+kfalfa.*x.^4); % Eqn. 6b
 
 %viscous atten
 % chi_hs scattering
-rho=g; %rhok/rho0
-nu=1e-6; % kinematic viscosity
 
-da=co*dx/(2*pi*f);
+rho=g; %rhok/rho0;
+v=1e-6; c=1480;
+
+da=c*dx/(2*pi*f);
 a=a(1:nz1-1);
-w=2*pi*f;       % angular frequency
-k=2*pi*f/co;    % wave number
-beta=sqrt(w/(2*nu));
+w=2*pi*f;
+k=2*pi*f/c;
+beta=sqrt(w/(2*v));
 delta=0.5*(1+(9./(2*beta*a)));
 s=(9./(4*beta*a)).*(1+(1./(beta*a)));
 e1=((k*(rho-1).^2)/2);
@@ -121,11 +126,21 @@ e2=s./(s.^2+(rho+delta).^2);
 e12=e1.*e2;
 chiv=(4*a/3).*e12;
 
+
+
 %combine scat and visc atten chi_h
-chisvo=chishc+chiv;
+chisvo=chifi+chiv;
+subplot(2,1,2)
+loglog(x,chisvo,'k'), hold on
+axis([1e-4 1e1 1e-7 1e-0])
+xlabel('x_o','fontsize',mn), ylabel('\chi_{ho}','fontsize',mn)
+set(gca,'fontsize',mn)
+%title('Normalised total scattering cross-section  - attenuation','fontsize',mn)
+text(5,0.4,'b','fontsize',mn)
+
 
 % ave scattering for lognormal distribution chi_ho
-% use dsigma from above
+dsigma=0.5;
 %Lognormal
 for jj=1:nz;
    xo=xx(jj);
@@ -139,12 +154,7 @@ for jj=1:nz;
    achilngo(jj)=(axlng(jj).*axchi)./ax3;
 end
 
-subplot(2,1,2)
-loglog(x,chisvo,'k'), hold on
-axis([1e-4 1e1 1e-7 1e-0])
-xlabel('x_o','fontsize',mn), ylabel('\chi_{ho}','fontsize',mn)
-set(gca,'fontsize',mn)
-%title('Normalised total scattering cross-section  - attenuation','fontsize',mn)
-text(5,0.4,'b','fontsize',mn)
 loglog(axlng,achilngo,'--k')
+
+
 
