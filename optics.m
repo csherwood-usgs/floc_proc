@@ -1,37 +1,37 @@
 % optics.m
-% calculate area of suspended particles
+% instrument response for our fractal dimension and floc diameters
+load c_coeffs
+load c_coeffs_sand
 
-% d = diameter
-% m = mass concentration
-% r = density
-% A = area (summed over sizes)
+c_ac9_nf = interp1(nf',c_ac9',fnf)';
+c_ac9_i = interp1(D*1e-6',c_ac9_nf,fdiam')';
+r_ac9=sum(C.*repmat(c_ac9_i,nz,1),2);
 
-% N = total volume per m3 = mass/m3 / density
-%     -------------------
-%     volume per particle
-%
-% A = N*area per particle 
+c_mass_nf = interp1(nf',c_mass',fnf)';
+c_mass_i = interp1(D*1e-6',c_mass_nf,fdiam')';
+r_mass=sum(C.*repmat(c_mass_i,nz,1),2);
 
-% area of flocs
-d= squeeze(repmat(fdiam(1:NST),1,nz,nt));
-r= squeeze(repmat(rhos(1:NST),1,nz,nt));
-Af =  squeeze( sum ((3./4.)*( m ./r)./(0.5*d) ));
-clear d r
+c_cstar_nf = interp1(nf',c_cstar',fnf)';
+c_cstar_i = interp1(D*1e-6',c_cstar_nf,fdiam')';
+r_cstar=sum(C.*repmat(c_cstar_i,nz,1),2);
 
-figure; clf
-pcolorjw( s2d*tz, h+z_w, Af)
-colorbar
-caxis([0 100])
-title('Floc Optical Response (\mum)')
+c_lisst_nf = interp1(nf',c_lisst',fnf)';
+c_lisst_i = interp1(D*1e-6',c_lisst_nf,fdiam')';
+r_lisst=sum(C.*repmat(c_lisst_i,nz,1),2);
 
-% area of sand grains
-d= squeeze(repmat(fdiam(NST+NNN+1:NST+NNN+NND),1,nz,nt));
-r= squeeze(repmat(rhos(NST+NNN+1:NST+NNN+NND),1,nz,nt));
-As =  squeeze( sum ((3./4.)*( snd ./r)./(0.5*d) ));
-clear d r
+% optical instrument response for sand diameters
+Sc_ac9_i = interp1(D*1e-6',c_ac9_sand,Dm')';
+Sr_ac9=sum(SC.*repmat(Sc_ac9_i,nz,1),2);
 
-figure; clf
-pcolorjw( s2d*tz, h+z_w, As)
-colorbar
-caxis([0 100])
-title('Sand Optical Response (\mum)')
+Sc_mass_i = interp1(D*1e-6',c_mass_sand,Dm')';
+Sr_mass=sum(SC.*repmat(Sc_mass_i,nz,1),2);
+
+Sc_cstar_i = interp1(D*1e-6',c_cstar_sand,Dm')';
+Sr_cstar=sum(SC.*repmat(Sc_cstar_i,nz,1),2);
+
+Sc_lisst_i = interp1(D*1e-6',c_lisst_sand,Dm')';
+Sr_lisst=sum(SC.*repmat(Sc_lisst_i,nz,1),2);
+r_ac9 = r_ac9+Sr_ac9;
+r_mass = r_mass+Sr_mass;
+r_cstar = r_cstar+Sr_cstar;
+r_lisst = r_lisst+Sr_lisst;
