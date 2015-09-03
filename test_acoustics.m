@@ -1,6 +1,6 @@
-% test_acoustics - Script to test acoustics routines
-global mvco
-mvco = 0;
+% test_acoustics - Script to test f_chi_func routine
+global thorne
+thorne = 1; % sets physical params to match Thorne's paper
 f=3e6; % frequency
 a = logspace(-9, -3, 200 )'; % radius (m)
 Df = 2*a;                    % diameter (m)
@@ -19,8 +19,8 @@ elseif(0) % solid
 elseif(0) % water
    rhow = 1000;
    rhof = rhow*ones(size(a));
-elseif(1) % mvco
-   mvco = 1;
+elseif(1) % default to MVCO parameters
+   thorne = 0;
    rhow = 1025;
    rhos = 2650;
    nf = 1.9;

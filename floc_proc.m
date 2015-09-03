@@ -2,9 +2,9 @@
 clear
 
 cas = 66
-%url = sprintf('ocean_his%2d.nc',cas)
+url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
-url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
+%url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
 % Read in NST and Nbed instead of loading in huge files to infer their size
 ncid = netcdf.open(url,'NOWRITE')
 dimid = netcdf.inqDimID(ncid,'NST')
@@ -84,7 +84,7 @@ for n=1:NST
 end
 muds = squeeze(sum(m));
 summuds = sum( muds.*dzw);
-%% total conc
+% total conc
 s2d = 1. /(3600.*24.)
 figure(1); clf
 pcolorjw( s2d*tz, h+z_w, log10(muds+eps))
@@ -96,15 +96,30 @@ title('log_{10} Total Floc Concentration')
 wst = squeeze(sum(repmat(ws(1:NST),1,nz,nt).*m)./sum(m));
 figure(2); clf
 pcolorjw( s2d*tz, h+z_w, 1e3*wst)
-
 colorbar
 title('Floc Settling Velocity (mm/s)')
+
 % fraction-weighted size
 figure(3); clf
 fdiamt = squeeze(sum(repmat(fdiam(1:NST),1,nz,nt).*m)./sum(m));
 pcolorjw( s2d*tz, h+z_w, 1e6*fdiamt)
 colorbar
 title('Floc Diameter (\mum)')
+
+% acoustic response 
+Dfv = fdiam(1:NST);
+rhofv = rhos(1:NST);
+v = zeros(nz,nt);
+for jj=1:nt
+   for ii=1:nz
+      mv = squeeze(m(:,ii,jj));
+      v(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,3e6);
+   end
+end
+figure(4)
+pcolorjw( s2d*tz, h+z_w, v)
+colorbar
+title('Acoustic Response')
 %% read 15 non-depositing classes, one cell only, for 1D results
 snn = zeros( NNN, nz, nt);
 for n=1:NNN
@@ -113,23 +128,41 @@ for n=1:NNN
 end
 snns = squeeze(sum(snn));
 sumsnns = sum( snns.*dzw);
-%% total conc
-figure(4); clf
+
+% total conc
+figure(5); clf
 pcolorjw( s2d*tz, h+z_w, log10(snns+eps))
 colorbar
 title('Non-depositing Sand log_{10} Total Concentration')
+
 % fraction-weighted ws
 wst = squeeze(sum(repmat(ws(NST+1:NST+NNN),1,nz,nt).*snn)./sum(snn));
-figure(5); clf
+figure(6); clf
 pcolorjw( s2d*tz, h+z_w, 1e3*wst)
 colorbar
 title('Non-depositing Sand Settling Velocity (mm/s)')
+
 % fraction-weighted size
-figure(6); clf
+figure(7); clf
 fdiamt = squeeze(sum(repmat(fdiam(NST+1:NST+NNN),1,nz,nt).*snn)./sum(snn));
 pcolorjw( s2d*tz, h+z_w, 1e6*fdiamt)
 colorbar
 title('Non-depositing Sand Diameter (\mum)')
+
+% acoustic response 
+Dfv = fdiam(NST+1:NST+NNN);
+rhofv = rhos(NST+1:NST+NNN);
+vnn = zeros(nz,nt);
+for jj=1:nt
+   for ii=1:nz
+      mv = squeeze(snn(:,ii,jj));
+      vnn(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,3e6);
+   end
+end
+figure(8)
+pcolorjw( s2d*tz, h+z_w, vnn)
+colorbar
+title('Non-depositing Acoustic Response')
 %% read 4 depositing classes, one cell only, for 1D results
 snd = zeros( NND, nz, nt);
 ic = 0;
@@ -140,22 +173,55 @@ for n=NNN+1:NNN+NND
 end
 snds = squeeze(sum(snd));
 sumsnds = sum( snds.*dzw);
-%% total conc
+
+% total conc
 s2d = 1. /(3600.*24.)
-figure(7); clf
+figure(9); clf
 pcolorjw( s2d*tz, h+z_w, log10(snds+eps))
 caxis([-2 2])
 colorbar
 title('Sand log_{10} Total Concentration')
+
 % fraction-weighted ws
 wssdt = squeeze(sum(repmat(ws(NNN+NST+1:NST+NNN+NND),1,nz,nt).*snd)./sum(snd));
-figure(8); clf
+figure(10); clf
 pcolorjw( s2d*tz, h+z_w, 1e3*wssdt)
 colorbar
 title('Sand Settling Velocity (mm/s)')
+
 % fraction-weighted size
-figure(9); clf
+figure(11); clf
 fdiamsdt = squeeze(sum(repmat(fdiam(NNN+NST+1:NST+NNN+NND),1,nz,nt).*snd)./sum(snd));
 pcolorjw( s2d*tz, h+z_w, 1e6*fdiamsdt)
 colorbar
 title('Sand Diameter (\mum)')
+
+% acoustic response 
+Dfv = fdiam(NNN+NST+1:NST+NNN+NND);
+rhofv = rhos(NNN+NST+1:NST+NNN+NND);
+vsn = zeros(nz,nt);
+for jj=1:nt
+   for ii=1:nz
+      mv = squeeze(snd(:,ii,jj));
+      vsn(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,3e6);
+   end
+end
+figure(12)
+pcolorjw( s2d*tz, h+z_w, vsn)
+colorbar
+title('Sand Acoustic Response')
+
+%% floc + sand combined acoustic response 
+Dfv = [fdiam(1:NST); fdiam(NNN+NST+1:NST+NNN+NND) ];
+rhofv = [rhos(1:NST); rhos(NNN+NST+1:NST+NNN+NND) ];
+vcomb = zeros(nz,nt);
+for jj=1:nt
+   for ii=1:nz
+      mv = [squeeze(m(:,ii,jj)); squeeze(snd(:,ii,jj))];
+      vcomb(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,3e6);
+   end
+end
+figure(13)
+pcolorjw( s2d*tz, h+z_w, vcomb)
+colorbar
+title('Combined Acoustic Response')

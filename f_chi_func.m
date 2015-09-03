@@ -12,20 +12,22 @@ function [ffi,chisvo,x] = f_chi_func( a, f, rhof )
 %   x   - nondimensional particle size
 
 % Default to solid particles
-global mvco
+global thorne
 % These physcial parameters could be passed as arguments or global variables
-% For comparison with Thorne:
-co=1480;   % speed of sound in water
-rhow=1000; % density of water
-ck=5550;   % speed of sound in particle
-rhos=2600; % density of particle
-v=1e-6;    % kinematic  
-% For MVCO:
-if(mvco)
+if thorne
+   % For comparison with Thorne:
+   co=1480;   % speed of sound in water
+   rhow=1000; % density of water
+   ck=5550;   % speed of sound in particle
+   rhos=2600; % density of particle
+   v=1e-6;    % kinematic viscosity
+else
+   % For MVCO:
    co=1500.;   % speed of sound in water
-   rho0=1025.; % density of water
+   rhow=1025.; % density of water
    ck=5800;    % speed of sound in quartz
-   rhos=2650;  % density of quartz  
+   rhos=2650;  % density of quartz
+   v=1e-6;    % kinematic viscosity
 end
 
 x=2*pi*a*f/co;
@@ -47,7 +49,7 @@ rhoex = min(rhoex, rhos-rhow);
 % not letting effective density go below zero
 rhoex = max( 0., rhoex );
 gam=1.+rhoex/rhow;
-gam = max( gam, beta1 )
+gam = max( gam, beta1 );
 %zz=find(gam<beta1); gam(zz)=beta1;
 phi=(gk-gam)/(gk-1);
 
@@ -70,14 +72,7 @@ kalfa=2*(((e-1)./(3*e)).^2+(1/3)*((gam-1)./(2*gam+1)).^2);
 chishc=(kalfa.*x.^4)./(1-1.0*x+1.5*x.^2+kalfa.*x.^4);
 %subplot(2,1,2), loglog(x,chishc,':k'), hold on
 
-%viscous atten
-% chi_hs scattering
-
-% rho=g; %rhok/rho0; 
-
-
-% da=c*dx/(2*pi*f); 
-% a=a(1:nz1-1); 
+% viscous attenuation
 w=2*pi*f;
 k=2*pi*f/co;
 beta=sqrt(w/(2*v));
