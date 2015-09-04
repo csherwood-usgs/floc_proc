@@ -3,13 +3,10 @@ clear
 %% case number
 cas='52'
 
-
 %%
 
 load('ustar_av')
-
 url=['http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_',cas,'.nc'];
-
 nc=ncgeodataset(url);
 
 tim=nc{'ocean_time'}(:)/3600/24+ustar_av.dn(1);
@@ -32,6 +29,7 @@ rho=nanmean(nanmean(nc{'rho'}(:,:,3,3)))+1000;
 bstru=nc{'bustrcwmax'}(:,3,3);
 bstrv=nc{'bvstrcwmax'}(:,3,3);
 bstr=abs(complex(bstru,bstrv));
+ustr=sqrt(bstr/rho);
 %%
 vonKar=0.41;
 gls=nc{'gls'}(:,:,3,3);
@@ -42,10 +40,7 @@ for k=2:nz
     gls_av(:,k)=.5*gls(:,k)+.5*gls(:,k+1);
     tke_av(:,k)=.5*tke(:,k)+.5*tke(:,k+1);
 end
-% for k=1:nz
-%     gls_av(:,k)=.5*gls(:,k)+.5*gls(:,k+1);
-%     tke_av(:,k)=.5*tke(:,k)+.5*tke(:,k+1);
-% end
+
 gls_p = -1  ;%                        ! k-omega
 gls_m = 0.5;
 gls_n = -1.0;
@@ -55,17 +50,12 @@ exp2 = 1.5+gls_m/gls_n;
 exp3 = -1.0/gls_n;
 diss0 = (gls_cmu0^exp1).*(tke_av.^exp2).*(gls_av.^exp3);
 diss=diss0;
-diss(:,1)=(bstr.^1.5)/(vonKar*0.9);
+%diss(:,1)=(bstr.^1.5)/(vonKar*0.9);
+diss(:,1)=(ustr.^3)/(vonKar*0.9);
 
 nu0=1.5e-6;
 G0=sqrt(diss0/nu0);
 G=sqrt(diss/nu0);
-%%
-figure(1);clf
-pcolorjw(tim*ones(1,nz),z_r,G)
-caxis([0,20])
-datetick('keepticks','keeplimits')
-colorbar
 
 %%
 figure(2);clf
@@ -85,14 +75,14 @@ title('enhanced G ')
 subplot 223
 pcolorjw(tim*ones(1,nz),z_r,G0)
 set(gca,'YLim',[-11.9,-10])
-caxis([0,100])
+caxis([0,120])
 datetick('x','mm/dd','keepticks','keeplimits')
 colorbar
 title('G from GLS zoom ')
 subplot 224
 pcolorjw(tim*ones(1,nz),z_r,G)
 set(gca,'YLim',[-11.9,-10])
-caxis([0,2000])
+caxis([0,120])
 datetick('x','mm/dd','keepticks','keeplimits')
 colorbar
 title('enhanced G zoom ')
