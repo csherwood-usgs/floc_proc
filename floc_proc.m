@@ -221,7 +221,13 @@ for jj=1:nt
       vcomb(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,3e6);
    end
 end
+%%
 figure(13)
 pcolorjw( s2d*tz, h+z_w, vcomb)
 colorbar
 title('Combined Acoustic Response')
+xlabel('Days')
+ylabel('Elevation (m)')
+xlim([0 32.8])
+caxis([ 0 .3])
+ylim([0 3])
