@@ -1,37 +1,21 @@
-% optics.m
-% instrument response for our fractal dimension and floc diameters
-load c_coeffs
-load c_coeffs_sand
+% optical response
+Dfv = fdiam(1:NST);
+r_ac9f=zeros(nz,nt);
 
-c_ac9_nf = interp1(nf',c_ac9',fnf)';
-c_ac9_i = interp1(D*1e-6',c_ac9_nf,fdiam')';
-r_ac9=sum(C.*repmat(c_ac9_i,nz,1),2);
+if(exist('isfloc','var')~=1),isfloc=1;,end
+% import D, nf, c_ac9, c_mass, c_lisst, and same for sand
+if(exist('c_ac9','var')~=1),
+   load c_coeffs
+   load c_coeffs_sand
+end
+% skip next step because nf=2 is column 1
+% c_ac9_nf = interp1(nf',c_ac9',fnf)';
 
-c_mass_nf = interp1(nf',c_mass',fnf)';
-c_mass_i = interp1(D*1e-6',c_mass_nf,fdiam')';
-r_mass=sum(C.*repmat(c_mass_i,nz,1),2);
-
-c_cstar_nf = interp1(nf',c_cstar',fnf)';
-c_cstar_i = interp1(D*1e-6',c_cstar_nf,fdiam')';
-r_cstar=sum(C.*repmat(c_cstar_i,nz,1),2);
-
-c_lisst_nf = interp1(nf',c_lisst',fnf)';
-c_lisst_i = interp1(D*1e-6',c_lisst_nf,fdiam')';
-r_lisst=sum(C.*repmat(c_lisst_i,nz,1),2);
-
-% optical instrument response for sand diameters
-Sc_ac9_i = interp1(D*1e-6',c_ac9_sand,Dm')';
-Sr_ac9=sum(SC.*repmat(Sc_ac9_i,nz,1),2);
-
-Sc_mass_i = interp1(D*1e-6',c_mass_sand,Dm')';
-Sr_mass=sum(SC.*repmat(Sc_mass_i,nz,1),2);
-
-Sc_cstar_i = interp1(D*1e-6',c_cstar_sand,Dm')';
-Sr_cstar=sum(SC.*repmat(Sc_cstar_i,nz,1),2);
-
-Sc_lisst_i = interp1(D*1e-6',c_lisst_sand,Dm')';
-Sr_lisst=sum(SC.*repmat(Sc_lisst_i,nz,1),2);
-r_ac9 = r_ac9+Sr_ac9;
-r_mass = r_mass+Sr_mass;
-r_cstar = r_cstar+Sr_cstar;
-r_lisst = r_lisst+Sr_lisst;
+c_ac9_i = interp1(D*1e-6',c_ac9(:,1),Dfv')';
+r_ac9=sum(mv.*c_ac9_i);
+for jj=1:nt
+   for ii=1:nz
+      mv = squeeze(m(:,ii,jj));
+      r_ac9f(ii,jj)=sum(mv.*c_ac9_i);
+   end
+end
