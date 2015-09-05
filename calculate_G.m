@@ -1,10 +1,9 @@
 clear
 
 %% case number
-cas='52'
+cas='72'
 
 %%
-
 load('ustar_av')
 url=['http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_',cas,'.nc'];
 nc=ncgeodataset(url);
@@ -51,8 +50,12 @@ exp3 = -1.0/gls_n;
 diss0 = (gls_cmu0^exp1).*(tke_av.^exp2).*(gls_av.^exp3);
 diss=diss0;
 %diss(:,1)=(bstr.^1.5)/(vonKar*0.9);
-diss(:,1)=(ustr.^3)/(vonKar*0.9);
-
+if  str2num(cas)<72
+    diss(:,1)=(ustr.^3)/(vonKar*0.9);
+else
+    effecz=ustr.*ustar_av.Tr(1:length(ustr));
+    diss(:,1)=(ustr.^3)./(vonKar.*effecz);
+end
 nu0=1.5e-6;
 G0=sqrt(diss0/nu0);
 G=sqrt(diss/nu0);
@@ -75,14 +78,14 @@ title('enhanced G ')
 subplot 223
 pcolorjw(tim*ones(1,nz),z_r,G0)
 set(gca,'YLim',[-11.9,-10])
-caxis([0,120])
+caxis([0,40])
 datetick('x','mm/dd','keepticks','keeplimits')
 colorbar
 title('G from GLS zoom ')
 subplot 224
 pcolorjw(tim*ones(1,nz),z_r,G)
 set(gca,'YLim',[-11.9,-10])
-caxis([0,120])
+caxis([0,40])
 datetick('x','mm/dd','keepticks','keeplimits')
 colorbar
 title('enhanced G zoom ')
