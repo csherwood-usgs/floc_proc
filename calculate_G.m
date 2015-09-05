@@ -53,7 +53,7 @@ diss=diss0;
 if  str2num(cas)<72
     diss(:,1)=(ustr.^3)/(vonKar*0.9);
 else
-    effecz=ustr.*ustar_av.Tr(1:length(ustr));
+    effecz=ustr.*ustar_av.Tr(1:length(ustr))/(2*pi);
     diss(:,1)=(ustr.^3)./(vonKar.*effecz);
 end
 nu0=1.5e-6;
