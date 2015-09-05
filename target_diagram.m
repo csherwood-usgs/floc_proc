@@ -54,7 +54,8 @@ if(iplot)
       h=circle(ou,0,0,'--k');
    end
    h=scatter(RMSD_star,BIAS,54,R,'filled');
-   set(h,'markeredgecolor',c);
+   %get(h)
+   set(h,'markeredgecolor',c,'linewidth',1.5);
    caxis([-1,1]);
    axis([-2 2 -2 2]);
    axis square

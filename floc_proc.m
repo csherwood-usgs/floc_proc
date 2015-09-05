@@ -1,7 +1,7 @@
 % floc_proc.m - Script to read and plot ROMS .his files
 clear
-cas = 70
-iplot = 0; % if true, save plots
+cas = 71
+iplot = 1; % if true, save plots
 url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
 %url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
