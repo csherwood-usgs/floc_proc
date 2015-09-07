@@ -1,4 +1,5 @@
 % ws_fit_model - fit Rouse profiles to
+iplot=1;
 za=0.1
 cc=r_ac9f+r_ac9s+eps;
 for ii = 1:nt
@@ -45,6 +46,8 @@ h4=legend([h1;h2;h3],'Combined Acoustics','Optics','Acoustics (sand)')
 xlabel('Days','fontsize',16)
 ylabel('Apparent {\itw_s} (mm/s)','fontsize',16);
 xlim([0 32.8])
+pfn=sprintf('model_ws_timeseries_run%02d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %% look for size inversions
 dfd2 = 1e6*(fdiamt(9,:)-fdiamt(2,:));
 dfdall = 1e6*(fdiamall(9,:)-fdiamall(2,:));
@@ -58,6 +61,8 @@ set(gca,'fontsize',14)
 ylabel('{\itD}_{1.9} - {\itD}_{0.6} ({\mu}m)','fontsize',16)
 xlabel('Days','fontsize',16)
 xlim([0 32.8])
+pfn=sprintf('model_delta_D_timeseries_run%02d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 
 figure(3); clf
 plot([0 s2d*tz(end)],[0 0],'--k')
@@ -68,3 +73,5 @@ set(h1,'color',[.2 .2 .2],'markersize',12)
 ylabel('{\itD}_{1.9} - {\itD}_{0.6} ({\mu}m)','fontsize',16)
 xlabel('Wave-current Combined Stress (Pa)')
 xlim([0 5])
+pfn=sprintf('model_delta_D_stress_%02d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
