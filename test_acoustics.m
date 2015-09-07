@@ -45,11 +45,11 @@ figure(1); hold on
 % xlim([1e-3 1])
 
 subplot(211)
-loglog( x, ffi )
+loglog( x, ffi,'linewidth',2 )
 % ylim([1e-6 10^1.2])
 % xlim([1e-3 1])
 
 subplot(212)
-loglog( x, chisvo )
+loglog( x, chisvo,'linewidth',2 )
 % xlim([1e-3 1])
 % ylim([1e-8 10^1.2])

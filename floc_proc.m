@@ -1,7 +1,7 @@
 % floc_proc.m - Script to read and plot ROMS .his files
 clear
-cas = 71
-iplot = 1; % if true, save plots
+cas = 70
+iplot = 0; % if true, save plots
 url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
 %url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
@@ -231,6 +231,20 @@ xlabel('Days','fontsize',16)
 title('Sand Diameter (\mum)')
 pfn=sprintf('sand_conc_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
+
+% TODO - Renumber figures
+% fraction-weighted size of both sand and flocs
+figure
+fdiamall = squeeze((sum(repmat(fdiam(1:NST),1,nz,nt).*m)...
+           +        sum(repmat(fdiam(NNN+NST+1:NST+NNN+NND),1,nz,nt).*snd))...
+           ./(sum(snd)+sum(m)));
+pcolorjw( s2d*tz, h+z_w, 1e6*fdiamt)
+colorbar
+title('Floc + Sand Diameter (\mum)')
+set(gca,'fontsize',14)
+xlabel('Days','fontsize',16)
+pfn=sprintf('floc+sand_size_run%02d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %% acoustic response
 Dfv = fdiam(NNN+NST+1:NST+NNN+NND);
 rhofv = rhos(NNN+NST+1:NST+NNN+NND);
@@ -338,6 +352,12 @@ ylim([0 3])
 
 pfn=sprintf('both_optical_response_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
+%% time series of both responses
+figure(15); clf
+iiz=3
+plot(s2d*tz, vcomb(iiz,:),'linewidth',2)
+hold on
+plot( s2d*tz, (r_ac9f(3,:)+r_ac9s(iiz,:)+eps),'linewidth',2)
 %%
 load cmap_plusminus
 figure(14)

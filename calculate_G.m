@@ -1,13 +1,13 @@
 clear
 
 %% case number
-cas='72'
+cas='70'
 
 %%
 load('ustar_av')
 url=['http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_',cas,'.nc'];
 nc=ncgeodataset(url);
-
+%
 tim=nc{'ocean_time'}(:)/3600/24+ustar_av.dn(1);
 nt=length(tim);
 
