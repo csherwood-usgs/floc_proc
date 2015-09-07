@@ -3,7 +3,9 @@ clear
 %% case number
 cas='70'
 
+
 %%
+
 load('ustar_av')
 url=['http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_',cas,'.nc'];
 nc=ncgeodataset(url);
@@ -59,31 +61,47 @@ end
 nu0=1.5e-6;
 G0=sqrt(diss0/nu0);
 G=sqrt(diss/nu0);
+for it=1:nt
+    Gf(it,:)=max([G0(it,:);G(it,:)]);
+end
 
 %%
 figure(2);clf
-set(gcf,'PaperPosition',[.5,.5,10,8]);wysiwyg
-subplot 221
+set(gcf,'PaperPosition',[.5,.5,8,10]);wysiwyg
+subplot 321
 pcolorjw(tim*ones(1,nz),z_r,G0)
 caxis([0,4])
 datetick('x','mm/dd','keepticks','keeplimits')
 colorbar
 title('G from GLS')
-subplot 222
-pcolorjw(tim*ones(1,nz),z_r,G)
-caxis([0,4])
-datetick('x','mm/dd','keepticks','keeplimits')
-colorbar
-title('enhanced G ')
-subplot 223
+subplot 322
 pcolorjw(tim*ones(1,nz),z_r,G0)
 set(gca,'YLim',[-11.9,-10])
 caxis([0,40])
 datetick('x','mm/dd','keepticks','keeplimits')
 colorbar
 title('G from GLS zoom ')
-subplot 224
+subplot 323
 pcolorjw(tim*ones(1,nz),z_r,G)
+caxis([0,4])
+datetick('x','mm/dd','keepticks','keeplimits')
+colorbar
+title('u^* G ')
+subplot 324
+pcolorjw(tim*ones(1,nz),z_r,G)
+set(gca,'YLim',[-11.9,-10])
+caxis([0,40])
+datetick('x','mm/dd','keepticks','keeplimits')
+colorbar
+title('u^* G zoom ')
+subplot 325
+pcolorjw(tim*ones(1,nz),z_r,Gf)
+caxis([0,4])
+datetick('x','mm/dd','keepticks','keeplimits')
+colorbar
+title('enhanced G ')
+subplot 326
+pcolorjw(tim*ones(1,nz),z_r,Gf)
 set(gca,'YLim',[-11.9,-10])
 caxis([0,40])
 datetick('x','mm/dd','keepticks','keeplimits')
