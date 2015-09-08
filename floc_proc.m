@@ -1,10 +1,10 @@
 % floc_proc.m - Script to read and plot ROMS .his files
 clear
-cas = 70
+cas = 74
 iplot = 0; % if true, save plots
-url = sprintf('ocean_his%2d.nc',cas)
+%url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
-%url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
+url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
 % Read in NST and Nbed instead of loading in huge files to infer their size
 ncid = netcdf.open(url,'NOWRITE')
 dimid = netcdf.inqDimID(ncid,'NST')
