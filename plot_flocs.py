@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[40]:
 
 # plot_flocs.ipynb
 from pylab import *
@@ -10,6 +10,7 @@ get_ipython().magic(u'matplotlib inline')
 import os
 import platform
 computer_name = platform.uname()[1]
+print computer_name
 if computer_name=='igsagiegwscshl0':
     print 'CRS Ubuntu desktop'
     src_dir = r"/home/csherwood-pr/crs/src/"
@@ -19,7 +20,7 @@ if computer_name=='igsagiegwscshl0':
     #case_dir = r'os_flocruns/wave_tide/'
     case_dir = r'os_flocruns/aug_runs/'
     #case_dir = r'os_flocruns/tide_floc/'
-elif computer_name=='IGSAGIEGLTCSH70':
+elif computer_name=='igsagiegltcsh72':
     print 'CRS laptop'
     src_dir = r"C:/crs/src/"
     proj_dir = r"C:/crs/proj/"
@@ -37,7 +38,7 @@ else :
 ########################
 # run name 
 # maybe plot results from several runs
-flist = ['70']
+flist = ['77']
 run_name = flist[0]
 ########################
 
@@ -84,7 +85,7 @@ theta_s = nc.variables['theta_s'][:]
 theta_b = nc.variables['theta_b'][:]
 hc = nc.variables['hc'][:]
 
-s = s+'hc = {0:f}, theta_s = {1:f}, theta_b = {2:f}\n'.format(hc,theta_s,theta_b)
+s = s+'hc = {0}, theta_s = {1}, theta_b = {2}\n'.format(hc,theta_s,theta_b)
 print s
 with open( stats_filename, "a") as afile:
     afile.write(s)
@@ -95,7 +96,7 @@ with open( stats_filename, "a") as afile:
 #C = (1-b)*np.sinh(a*sr)/np.sinh(a) + b*[np.tanh(a*(sr+0.5))/(2*np.tanh(0.5*a)) - 0.5]
 
 
-# In[2]:
+# In[41]:
 
 # read water depth
 h = nc.variables['h'][3,4]
@@ -108,7 +109,7 @@ with open( stats_filename, "a") as afile:
 plot(zeta)
 
 
-# In[3]:
+# In[42]:
 
 # use Rob Hetland's depths.py functions
 zw = dp.get_zw(Vtransform=Vtransform, Vstretching=Vstretching, N=N+1,     theta_s=theta_s, theta_b=theta_b, h=h, hc=hc, zeta=0, Hscale=3)
@@ -131,7 +132,7 @@ print 'shape(dz2d) = ',shape( dz2d )
 #print dz
 
 
-# In[4]:
+# In[60]:
 
 # read sediment classes
 fdiam = 1e6*nc.variables['Sd50'][:]
@@ -142,7 +143,7 @@ print(fdiam)
 print(rhos)
 
 
-# In[5]:
+# In[61]:
 
 # check mass conservation of suspended NCS classes only
 # (last class in these runs is sand)
@@ -188,7 +189,7 @@ if( max_mud_change > 1e-8 ):
     plt.savefig(fig_name)
 
 
-# In[6]:
+# In[63]:
 
 # make 2D arrays of time and depths
 t2d = tile(time,(nz,1)).T #2D time(nt, nz)
@@ -217,11 +218,13 @@ cmap = plt.get_cmap('RdGy')
 
 fig = plt.figure(figsize=(12,10))
 ax=fig.add_subplot(3,1,1)
-cmap = plt.get_cmap('Reds')
+
 cmap = plt.get_cmap('RdGy')
 cmap = plt.get_cmap('binary')
-pcolormesh(t2d/3600.,z2d,sum(mud,2),cmap=cmap,vmin=0.,vmax=0.2)
-plt.title(run_name+' Concentration (kg/m2)')
+cmap = plt.get_cmap('PuRd')
+cmap = plt.get_cmap('Reds')
+pcolormesh(t2d/(24.*3600.),z2d,sum(mud,2),cmap=cmap,vmin=0.,vmax=0.2)
+plt.title('Run '+run_name+' Concentration (kg/m2)')
 plt.colorbar()
 
 ax=fig.add_subplot(3,1,2)
@@ -229,23 +232,23 @@ cmap = plt.get_cmap('Paired')
 cmap = plt.get_cmap('RdGy')
 cmap = plt.get_cmap('PuOr')
 cmap = plt.get_cmap('gist_earth')
-pcolormesh(t2d/3600.,z2d,fdiam_av,cmap=cmap,vmin=20,vmax=850)
+pcolormesh(t2d/(24.*3600.),z2d,fdiam_av,cmap=cmap,vmin=20,vmax=850)
 plt.ylabel('Elevation (m)')
 plt.title('Average diameter (mm)')
 plt.colorbar()
 
 ax=fig.add_subplot(3,1,3)
 cmap = plt.get_cmap('RdGy')
-pcolormesh(t2d/3600.,z2d,ws_av,cmap=cmap,vmin=0.1,vmax=1)
+pcolormesh(t2d/(24.*3600.),z2d,ws_av,cmap=cmap,vmin=0.1,vmax=1)
 plt.colorbar()
-plt.xlabel('Time (hrs)')
+plt.xlabel('Days')
 plt.title('Average settling velocity (mm/s)')
 fig_name = proj_dir+case_dir+'case_'+run_name+'conc_diam_ws.png'
 print fig_name
 plt.savefig(fig_name)
 
 
-# In[7]:
+# In[46]:
 
 # report final values
 s= "\n"+"i   z    diam    ws     conc"
@@ -258,7 +261,7 @@ with open( stats_filename, "a") as afile:
     afile.write(s)
 
 
-# In[8]:
+# In[47]:
 
 # Replay the contents of the summary txt file
 with open( stats_filename, "r") as afile:
@@ -266,7 +269,7 @@ with open( stats_filename, "r") as afile:
 print s
 
 
-# In[9]:
+# In[48]:
 
 # plot time series of floc classes at various depths
 fig = plt.figure(figsize=(6,10))
@@ -308,7 +311,7 @@ plt.savefig(fig_name)
     
 
 
-# In[10]:
+# In[49]:
 
 # Final profiles
 #print shape(z)
@@ -332,7 +335,7 @@ print fig_name
 plt.savefig(fig_name)
 
 
-# In[11]:
+# In[50]:
 
 # Calculate and plot turbulence and mixing info
 tke = nc.variables['tke'][:,:,3,4]
@@ -415,7 +418,7 @@ print fig_name
 plt.savefig(fig_name)
 
 
-# In[ ]:
+# In[51]:
 
 fig = plt.figure(figsize=(12,8))
 ax=fig.add_subplot(3,1,1)
@@ -468,7 +471,7 @@ for i in range(0,ncs) :
        idx = 1+numpy.where(dxdtN[1:]<=0.005)[0][0]
        print "mud[:,{0},{1}]:  {2:5.2f}".format(j,i,time[idx]/3600)
     
-# In[ ]:
+# In[52]:
 
 # Calculate G on rho 
 Gc = 0.5*(Gval[:,0:50]+Gval[:,1:51])
@@ -493,7 +496,7 @@ print "shape(tconc): ",shape(tconc)
 print "shape(tconc_mn): ",shape(tconc_mn)
 
 
-# In[ ]:
+# In[53]:
 
 # report final values
 s= "\nMeans for last {0} timesteps.\ni   z    diam    ws     conc   Gc".format(nts)
@@ -512,7 +515,7 @@ with open( stats_filename, "a") as afile:
     afile.write(s)
 
 
-# In[ ]:
+# In[54]:
 
 nf = 2.
 m = .2
@@ -528,7 +531,7 @@ print fig_name
 plt.savefig(fig_name)
 
 
-# In[ ]:
+# In[55]:
 
 fig = plt.figure(figsize=(6,6))
 #ax=fig.add_subplot(1,2,1)
@@ -545,43 +548,4 @@ savetxt(proj_dir+case_dir+run_name+'gc.txt',Gc_mn)
 savetxt(proj_dir+case_dir+run_name+'diam.txt',fdiam_av_mn)
 savetxt(proj_dir+case_dir+run_name+'ws.txt',ws_av_mn)
 savetxt(proj_dir+case_dir+run_name+'mconc.txt',tconc_mn)
-
-
-# In[ ]:
-
-# plot results from several runs
-# read data from GLS run, which has diffusivity for conc enabled
-flist = ['os050qg','os051qg','os052qg','os053qg','os054qg']
-i=0
-G=zeros( (len(flist),len(Gc_mn)) )
-d=zeros_like(G)
-c=zeros_like(G)
-ws=zeros_like(G)
-for run_name in flist:
-    G[i,:] =loadtxt(proj_dir+case_dir+run_name+'gc.txt')
-    d[i,:]=loadtxt(proj_dir+case_dir+run_name+'diam.txt')
-    ws[i,:]=loadtxt(proj_dir+case_dir+run_name+'ws.txt')
-    c[i,:]=loadtxt(proj_dir+case_dir+run_name+'mconc.txt')
-    i=i+1
-
-
-# In[ ]:
-
-# plot all results
-fig = plt.figure(figsize=(6,6))
-msize=10
-#plt.title(r'Equilibrium Floc Size',fontsize=16)
-plt.ylabel(r'Average Diameter $D$ ($\mu$m)',fontsize=14)
-plt.xlabel(r'Turbulence Shear Rate $G$ (s$^{-1}$)',fontsize=14)
-#plot(G[0,:],d[0,:],'.',markersize=10,label="1 kg/m^3")
-plot(G[3,:],d[3,:],'.',ms=msize,c='SaddleBrown',label="5 kg/m$^3$")
-plot(G[2,:],d[2,:],'.',ms=msize,c='Tan',label="2 kg/m$^3$")
-plot(G[1,:],d[1,:],'.',ms=msize,c='DimGray',label="1 kg/m$^3$")
-plot(G[4,:],d[4,:],'.',ms=msize,c='Silver',label="0.1 kg/m$^3$")
-plt.legend(loc='center right',title='Concentration')
-plt.xlim([0, 6])
-plt.ylim([100,700])
-fig_name = proj_dir+case_dir+'case_'+run_name+'multiple.png'
-print fig_name
-plt.savefig(fig_name)
 
