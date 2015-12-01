@@ -143,77 +143,77 @@ pfn=sprintf('both_acoustic_response_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 
 %% Plot optical responses - pcolor version
+figure(7); clf
+subplot(311)
+pcolorjw( s2d*tz, h+z_w, log10(r_ac9f+eps))
+colorbar
+title('Flocs Optical (ac-9) Response')
+set(gca,'xticklabel','','fontsize',14)
+%ylabel('Elevation (m)')
+xlim([0 32.8])
+caxis([-3 1])
+ylim([0 3])
 
-    figure(7); clf
-    subplot(311)
-    pcolorjw( s2d*tz, h+z_w, log10(r_ac9f+eps))
-    colorbar
-    title('Flocs Optical (ac-9) Response')
-    set(gca,'xticklabel','','fontsize',14)
-    %ylabel('Elevation (m)')
-    xlim([0 32.8])
-    caxis([-3 1])
-    ylim([0 3])
-    
-    subplot(312)
-    pcolorjw( s2d*tz, h+z_w, log10(r_ac9s+eps))
-    colorbar
-    title('Sand Optical Response')
-    set(gca,'xticklabel','','fontsize',14)
-    ylabel('Elevation (m)','fontsize',16)
-    xlim([0 32.8])
-    caxis([ -3 1])
-    ylim([0 3])
-    
-    subplot(313)
-    pcolorjw( s2d*tz, h+z_w, log10(r_ac9f+r_ac9s+eps))
-    colorbar
-    title('Combined Optical Response')
-    set(gca,'fontsize',14)
-    xlabel('Days','fontsize',16)
-    %ylabel('Elevation (m)','fontsize',14)
-    xlim([0 32.8])
-    caxis([ -3 1])
-    ylim([0 3])
-    
-    pfn=sprintf('pcol_both_optical_response_run%02d.png',cas)
-    if(iplot),print('-dpng','-r300',pfn); end
-% % line version
-%2 5 9
-iiz = 3
+subplot(312)
+pcolorjw( s2d*tz, h+z_w, log10(r_ac9s+eps))
+colorbar
+title('Sand Optical Response')
+set(gca,'xticklabel','','fontsize',14)
+ylabel('Elevation (m)','fontsize',16)
+xlim([0 32.8])
+caxis([ -3 1])
+ylim([0 3])
+
+subplot(313)
+pcolorjw( s2d*tz, h+z_w, log10(r_ac9f+r_ac9s+eps))
+colorbar
+title('Combined Optical Response')
+set(gca,'fontsize',14)
+xlabel('Days','fontsize',16)
+%ylabel('Elevation (m)','fontsize',14)
+xlim([0 32.8])
+caxis([ -3 1])
+ylim([0 3])
+
+pfn=sprintf('pcol_both_optical_response_run%02d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
+%% line version
 figure(8); clf;
-plot(s2d*ocean_time, r_ac9s(iiz,:),'linewidth',2,'color',ac9s_color)
+h1=plot(s2d*ocean_time, r_ac9s(iiz,:),'linewidth',2,'color',ac9s_color);
 hold on
-plot(s2d*ocean_time, r_ac9f(iiz,:),'linewidth',2,'color',ac9f_color)
-plot(s2d*ocean_time, r_lissts(iiz,:),'linewidth',2,'color',lissts_color)
+h2=plot(s2d*ocean_time, r_ac9f(iiz,:),'linewidth',2,'color',ac9f_color);
+h3=plot(s2d*ocean_time, r_lissts(iiz,:),'linewidth',2,'color',lissts_color);
+h4=plot(s2d*ocean_time, r_lisstf(iiz,:),'linewidth',2,'color',lisstf_color);
+title(['Optical Response to Flocs and Sand',ets])
+ylabel('Concentration (kg/m^3)')
+legend([h1;h2;h3;h4],'ac9 sand','ac9 flocs','LISST sand','LISST flocs');
 pfn=sprintf('line_both_optical_response_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-
 %% time series of sand, flocs and combined masses
 figure(9); clf
 h1=plot(s2d*ocean_time, vcomb1(iiz,:),'linewidth',2,'color',abss1c_color);
 hold on
-h2=plot(s2d*ocean_time, vcomb4(iiz,:),'linewidth',2,'color',abss3c_color);
-
+%h2=plot(s2d*ocean_time, vcomb4(iiz,:),'linewidth',2,'color',abss3c_color);
 h3=plot(s2d*ocean_time, (r_ac9f(3,:)+r_ac9s(iiz,:)+eps),'linewidth',2,'color',ac9c_color);
 h4=plot(s2d*ocean_time, (r_lisstf(3,:)+r_lissts(iiz,:)+eps),'linewidth',2,'color',lisstc_color);
 title(['Combined Response to Flocs and Sand',ets])
-legend([h1;h2;h3;h4],'1 MHz ABSS','4 MHz ABSS','ac9','LISST')
+legend([h1;h3;h4],'1 MHz ABSS','ac9','LISST')
 %% time series of both combined responses
-figure(10); clf
-h1=plot(s2d*ocean_time, vcomb1(iiz,:),'linewidth',2,'color',abss1c_color);
-hold on
-h2=plot(s2d*ocean_time, vcomb4(iiz,:),'linewidth',2,'color',abss3c_color);
-
-h3=plot(s2d*ocean_time, (r_ac9f(3,:)+r_ac9s(iiz,:)+eps),'linewidth',2,'color',ac9c_color);
-h4=plot(s2d*ocean_time, (r_lisstf(3,:)+r_lissts(iiz,:)+eps),'linewidth',2,'color',lisstc_color);
-title(['Combined Response to Flocs and Sand',ets])
-legend([h1;h2;h3;h4],'1 MHz ABSS','4 MHz ABSS','ac9','LISST')
+% TODO Edit this to plot estimated size
+% figure(10); clf
+% h1=plot(s2d*ocean_time, vcomb1(iiz,:),'linewidth',2,'color',abss1c_color);
+% hold on
+% h2=plot(s2d*ocean_time, vcomb4(iiz,:),'linewidth',2,'color',abss3c_color);
+% h3=plot(s2d*ocean_time, (r_ac9f(3,:)+r_ac9s(iiz,:)+eps),'linewidth',2,'color',ac9c_color);
+% h4=plot(s2d*ocean_time, (r_lisstf(3,:)+r_lissts(iiz,:)+eps),'linewidth',2,'color',lisstc_color);
+% title(['Combined Response to Flocs and Sand',ets])
+% legend([h1;h2;h3;h4],'1 MHz ABSS','4 MHz ABSS','ac9','LISST')
 %%
 load cmap_plusminus
 figure(11)
 pcolorjw( s2d*tz, h+z_w, vcomb25-vsn25)
 colorbar
+colormap(cmap_plusminus)
 title('Difference: Combined - Sand Acoustic Response','fontsize',16)
 xlabel('Days','fontsize',16)
 ylabel('Elevation (m)','fontsize',16)
@@ -225,18 +225,16 @@ if(iplot),print('-dpng','-r300',pfn); end
 %% overall acoustic response to conc
 tsed = muds+snds;
 figure(12); clf
-h1=plot(tsed(:),vcomb1(:),'.','color',abss1_color);
-set(h1,'markersize',14)
+h1=plot(tsed(:),vcomb25(:),'.','color',abss2c_color);
+set(h1,'markersize',14);
 hold on
-h1=plot(tsed(:),vcomb25(:),'.','color',abss2_color);
-h1=plot(tsed(:),vcomb4(:),'.','color',abss3_color);
-h2=plot(muds(:),v25(:),'.','color',abss3_color);
-set(h2,'markersize',14)
-h3=plot(snds(:),vsn25(:),'.','color',[1. .4 0]);
-set(h3,'markersize',14)
+h2=plot(muds(:),v25(:),'.','color',abss2f_color);
+set(h2,'markersize',14);
+h3=plot(snds(:),vsn25(:),'.','color',abss2s_color);
+set(h3,'markersize',14);
 xlabel('Mass Concentration (kg/m^3)','fontsize',16)
 ylabel('Acoustic Response','fontsize',16)
-h4=legend([h3;h2;h1],'Sand','Flocs','Combined')
+h4=legend([h3;h2;h1],'Sand','Flocs','Combined');
 set(h4,'fontsize',14)
 pfn = sprintf('acoustic_response_scatter%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
