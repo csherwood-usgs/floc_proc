@@ -2,7 +2,7 @@
 % requires nctoolbox
 clear
 %% case number
-cas='44'
+cas='78'
 %%
 load('ustar_av')
 
