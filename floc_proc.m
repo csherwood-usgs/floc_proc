@@ -148,7 +148,7 @@ for jj=1:nt
         vsn4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
     end
 end
-%% optical response of sand to ac9 and LISST - r_ac9s, r_lissts
+%% optical response to sand of ac9 and LISST   - r_ac9s, r_lissts
 Dfv = fdiam(NNN+NCS+1:NCS+NNN+NND);
 r_ac9s=zeros(nz,nt);
 r_lissts=zeros(nz,nt);
@@ -167,6 +167,26 @@ for jj=1:nt
         r_lissts(ii,jj)=sum(mv.*c_ac9_is);
     end
 end
+%% optical response of LISST  to sand and flocs - r_ac9s, r_lissts
+Dfv = fdiam(NNN+NCS+1:NCS+NNN+NND);
+r_ac9s=zeros(nz,nt);
+r_lissts=zeros(nz,nt);
+% import D, nf, c_ac9, c_mass, c_lisst, and same for sand
+if(exist('c_ac9_sand','var')~=1),
+    load c_coeffs_crs
+end
+% skip next step because nf=2 is column 1
+% c_ac9_nf = interp1(nf_optics',c_ac9',fnf)';
+c_ac9_is = interp1(D_optics*1e-6',c_ac9_sand(:),Dfv')';
+c_lisst_is = interp1(D_optics*1e-6',c_lisst_sand(:),Dfv')';
+for jj=1:nt
+    for ii=1:nz
+        mv = squeeze(snd(:,ii,jj));
+        r_ac9s(ii,jj)=sum(mv.*c_ac9_is);
+        r_lissts(ii,jj)=sum(mv.*c_ac9_is);
+    end
+end
+
 %% floc + sand combined acoustic response - vcomb
 Dfv = [fdiam(1:NCS); fdiam(NNN+NCS+1:NCS+NNN+NND) ];
 rhofv = [rhos(1:NCS); rhos(NNN+NCS+1:NCS+NNN+NND) ];
@@ -185,4 +205,5 @@ end
 fdiamall = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*m)...
     +        sum(repmat(fdiam(NNN+NCS+1:NCS+NNN+NND),1,nz,nt).*snd))...
     ./(sum(snd)+sum(m)));
+
 
