@@ -1,4 +1,4 @@
-% floc_proc.m - Script to read and plot ROMS .his files
+ % floc_proc.m - Script to read and plot ROMS .his files
 clear
 cas = 78
 fn = 0;
@@ -51,7 +51,7 @@ tau_cd = ncread(url,'tau_cd');
 %% this is a 1D run, so use i=3 and j =4
 i=3; j=4;
 h = squeeze(ncread(url,'h',[i j],[1 1]));
-dzr = diff(s_w)
+dzr = diff(s_w);
 ubar = squeeze(ncread(url,'ubar',[i j 1],[1 1 Inf]));
 %zeta = squeeze(ncread(url,'zeta'));
 zeta = squeeze(ncread(url,'zeta',[i j 1],[1 1 Inf]));
@@ -86,40 +86,6 @@ for n=1:NCS
 end
 muds = squeeze(sum(m));
 summuds = sum( muds.*dzw);
-%% acoustic response of flocs - v1, v25, v4
-Dfv = fdiam(1:NCS);
-rhofv = rhos(1:NCS);
-v1 = zeros(nz,nt);
-v25 = zeros(nz,nt);
-v4 = zeros(nz,nt);
-for jj=1:nt
-    for ii=1:nz
-        mv = squeeze(m(:,ii,jj));
-        v1(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,1e6);
-        v25(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,2.5e6);
-        v4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
-    end
-end
-%% optical response to flocs of ac9 and LISST - r_ac9f, r_lisstf
-r_ac9f=zeros(nz,nt);
-r_lisstf=zeros(nz,nt);
-if(exist('isfloc','var')~=1),isfloc=1; end
-% import D, nf, c_ac9, c_mass, c_lisst, and same for sand
-if(exist('c_ac9','var')~=1),
-    load c_coeffs_crs
-end
-% skip next step because nf=2 is column 1
-% c_ac9_nf = interp1(nf_optics',c_ac9',fnf)';
-c_ac9_i = interp1(D_optics*1e-6',c_ac9(:,1),Dfv')';
-c_lisst_i = interp1(D_optics*1e-6',c_lisst(:,1),Dfv')';
-r_ac9=sum(mv.*c_ac9_i);
-for jj=1:nt
-    for ii=1:nz
-        mv = squeeze(m(:,ii,jj));
-        r_ac9f(ii,jj)=sum(mv.*c_ac9_i);
-        r_lisstf(ii,jj)=sum(mv.*c_lisst_i);
-    end
-end
 %% read 15 non-depositing classes, one cell only, for 1D results
 if(0)
     load_non
@@ -134,7 +100,21 @@ for n=NNN+1:NNN+NND
 end
 snds = squeeze(sum(snd));
 sumsnds = sum( snds.*dzw);
-%% acoustic response of sand - vsn1, vsn25, and vsn4 (three frequencies)
+%% v1, v25, v4 - acoustic response to flocs
+Dfv = fdiam(1:NCS);
+rhofv = rhos(1:NCS);
+v1 = zeros(nz,nt);
+v25 = zeros(nz,nt);
+v4 = zeros(nz,nt);
+for jj=1:nt
+    for ii=1:nz
+        mv = squeeze(m(:,ii,jj));
+        v1(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,1e6);
+        v25(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,2.5e6);
+        v4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
+    end
+end
+%% vsn1, vsn25, and vsn4 - acoustic response to sand
 Dfv = fdiam(NNN+NCS+1:NCS+NNN+NND);
 rhofv = rhos(NNN+NCS+1:NCS+NNN+NND);
 vsn1 = zeros(nz,nt);
@@ -148,7 +128,29 @@ for jj=1:nt
         vsn4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
     end
 end
-%% optical response to sand of ac9 and LISST   - r_ac9s, r_lissts
+%%  r_ac9f, r_lisstf - optical response to flocs of ac9 and LISST
+Dfv = fdiam(1:NCS);
+r_ac9f=zeros(nz,nt);
+r_lisstf=zeros(nz,nt);
+if(exist('isfloc','var')~=1),isfloc=1; end
+% import D, nf, c_ac9, c_mass, c_lisst, and same for sand
+if(exist('c_ac9','var')~=1),
+    load c_coeffs_crs
+end
+% skip next step because nf=2 is column 1
+% c_ac9_nf = interp1(nf_optics',c_ac9',fnf)';
+c_ac9_i = interp1(D_optics*1e-6',c_ac9(:,1),Dfv')';
+c_lisst_i = interp1(D_optics*1e-6',c_lisst(:,1),Dfv')';
+% zero out LISST sizes that are too big
+c_lisst_i(Dfv>250.)=0;
+for jj=1:nt
+    for ii=1:nz
+        mv = squeeze(m(:,ii,jj));
+        r_ac9f(ii,jj)=sum(mv.*c_ac9_i);
+        r_lisstf(ii,jj)=sum(mv.*c_lisst_i);
+    end
+end
+%% r_ac9s, r_lissts - optical response to sand of ac9 and LISST
 Dfv = fdiam(NNN+NCS+1:NCS+NNN+NND);
 r_ac9s=zeros(nz,nt);
 r_lissts=zeros(nz,nt);
@@ -160,6 +162,8 @@ end
 % c_ac9_nf = interp1(nf_optics',c_ac9',fnf)';
 c_ac9_is = interp1(D_optics*1e-6',c_ac9_sand(:),Dfv')';
 c_lisst_is = interp1(D_optics*1e-6',c_lisst_sand(:),Dfv')';
+% zero out LISST sizes that are too big
+c_lisst_is(Dfv>250.)=0;
 for jj=1:nt
     for ii=1:nz
         mv = squeeze(snd(:,ii,jj));
@@ -167,27 +171,20 @@ for jj=1:nt
         r_lissts(ii,jj)=sum(mv.*c_ac9_is);
     end
 end
-%% optical response of LISST  to sand and flocs - r_ac9s, r_lissts
-Dfv = fdiam(NNN+NCS+1:NCS+NNN+NND);
-r_ac9s=zeros(nz,nt);
-r_lissts=zeros(nz,nt);
-% import D, nf, c_ac9, c_mass, c_lisst, and same for sand
-if(exist('c_ac9_sand','var')~=1),
-    load c_coeffs_crs
-end
-% skip next step because nf=2 is column 1
-% c_ac9_nf = interp1(nf_optics',c_ac9',fnf)';
-c_ac9_is = interp1(D_optics*1e-6',c_ac9_sand(:),Dfv')';
-c_lisst_is = interp1(D_optics*1e-6',c_lisst_sand(:),Dfv')';
+%% r_ac9c, r_lisstc - optical response of LISST  to sand and flocs combined
+r_ac9c=zeros(nz,nt);
+r_lisstc=zeros(nz,nt);
 for jj=1:nt
     for ii=1:nz
-        mv = squeeze(snd(:,ii,jj));
-        r_ac9s(ii,jj)=sum(mv.*c_ac9_is);
-        r_lissts(ii,jj)=sum(mv.*c_ac9_is);
+        mv = [c_ac9_i.*squeeze(m(:,ii,jj)); c_ac9_is.*squeeze(snd(:,ii,jj))];
+        r_ac9c(ii,jj)=sum(mv); 
+        mv = [c_lisst_i.*squeeze(m(:,ii,jj)); c_lisst_is.*squeeze(snd(:,ii,jj))];
+        r_lisstc(ii,jj)=sum(mv);
     end
 end
-
-%% floc + sand combined acoustic response - vcomb
+stats(r_ac9c(3,:));
+stats(r_lisstc(3,:));
+%% vcomb1, vcomb25, vcomb4 - floc + sand combined acoustic response
 Dfv = [fdiam(1:NCS); fdiam(NNN+NCS+1:NCS+NNN+NND) ];
 rhofv = [rhos(1:NCS); rhos(NNN+NCS+1:NCS+NNN+NND) ];
 vcomb1 = zeros(nz,nt);
@@ -201,9 +198,21 @@ for jj=1:nt
         vcomb4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
     end
 end
-%% fraction-weighted size of both sand and flocs - fdiamall
+%% fdiamall - fraction-weighted size of both sand and flocs - fdiamall
 fdiamall = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*m)...
     +        sum(repmat(fdiam(NNN+NCS+1:NCS+NNN+NND),1,nz,nt).*snd))...
     ./(sum(snd)+sum(m)));
-
-
+%% fdiamlisst - same calc, but omit diameters outside LISST range
+ml = m(1:NCS,:,:);
+sndl = snd;
+toobig = find(fdiam(1:NCS)>250e-6); 
+toosmall = find(fdiam(1:NCS)<4e-6);
+ml(toobig,:,:)=0;
+ml(toosmall,:,:)=0;
+toobigs =find(fdiam(NNN+NCS+1:NCS+NNN+NND)>250e-6);
+toosmalls =find(fdiam(NNN+NCS+1:NCS+NNN+NND)<4e-6);
+sndl(toobigs,:,:)=0;
+sndl(toosmalls,:,:)=0;
+fdiamlisst = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*ml)...
+    +                 sum(repmat(fdiam(NNN+NCS+1:NCS+NNN+NND),1,nz,nt).*sndl))) ...
+     ./squeeze(sum(sndl)+sum(ml));
