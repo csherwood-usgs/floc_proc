@@ -21,6 +21,7 @@ fi = 100*fi./sum(fi)
 fprintf(1,'D (mm) f\n')
 disp( [dfr, fr] );
 
+
 figure(1); clf
 subplot(211)
 h1=semilogx(1e3*dgrab,frgrab,'linewidth',1.5,'color',[.5 .5 .5]);
@@ -44,7 +45,20 @@ h3=plot(di,cumsum(fi),'-r','linewidth',2);
 xlabel('Grain Diameter (mm)')
 ylabel('Percent Finer')
 legend([h1(1);h2;h3],'All Grabs','Mean','Model')
-print -dpng -r300 'model_size_dist.png'
+
+oldscreenunits = get(gcf,'Units');
+oldpaperunits = get(gcf,'PaperUnits');
+oldpaperpos = get(gcf,'PaperPosition');
+set(gcf,'Units','pixels');
+scrpos = get(gcf,'Position');
+newpos = scrpos/100;
+set(gcf,'PaperUnits','inches',...
+     'PaperPosition',newpos)
+print('-dpng', 'model_size_dist.png', '-r300');
+drawnow
+set(gcf,'Units',oldscreenunits,...
+     'PaperUnits',oldpaperunits,...
+     'PaperPosition',oldpaperpos)
 
 % calculate critical shear stress and settling velocity
 p = soulsby_particle(1e-3*di,2650,1025,1.5e-6)
