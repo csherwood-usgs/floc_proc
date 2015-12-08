@@ -1,6 +1,6 @@
 % floc_proc.m - Script to read and plot ROMS .his files
 clear
-cas = 78
+cas = 87
 fn = 0;
 iplot = 0; % if true, save plots
 %url = sprintf('ocean_his%2d.nc',cas)
