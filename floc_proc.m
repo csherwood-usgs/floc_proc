@@ -1,6 +1,5 @@
 % floc_proc.m - Script to read and plot ROMS .his files
-clear
-cas = 94
+cas = 99
 fn = 0;
 iplot = 0; % if true, save plots
 %url = sprintf('ocean_his%2d.nc',cas)
@@ -152,7 +151,7 @@ end
 c_ac9_i = interp1(D_optics*1e-6',c_ac9(:,1),Dfv')';
 c_lisst_i = interp1(D_optics*1e-6',c_lisst(:,1),Dfv')';
 % zero out LISST sizes that are too big
-c_lisst_i(Dfv>250.)=0;
+c_lisst_i(Dfv>500.)=0;
 for jj=1:nt
    for ii=1:nz
       mv = squeeze(m(:,ii,jj));
@@ -173,7 +172,7 @@ end
 c_ac9_is = interp1(D_optics*1e-6',c_ac9_sand(:),Dfv')';
 c_lisst_is = interp1(D_optics*1e-6',c_lisst_sand(:),Dfv')';
 % zero out LISST sizes that are too big
-c_lisst_is(Dfv>250.)=0;
+c_lisst_is(Dfv>500.)=0;
 for jj=1:nt
    for ii=1:nz
       mv = squeeze(snd(:,ii,jj));
@@ -215,12 +214,12 @@ fdiamall = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*m)...
 %% fdiamlisst - same calc, but omit diameters outside LISST range
 ml = m(1:NCS,:,:);
 sndl = snd;
-toobig = find(fdiam(1:NCS)>250e-6);
-toosmall = find(fdiam(1:NCS)<4e-6);
+toobig = find(fdiam(1:NCS)>500e-6);
+toosmall = find(fdiam(1:NCS)<2.5e-6);
 ml(toobig,:,:)=0;
 ml(toosmall,:,:)=0;
-toobigs =find(fdiam(NNN+NCS+1:NCS+NNN+NND)>250e-6);
-toosmalls =find(fdiam(NNN+NCS+1:NCS+NNN+NND)<4e-6);
+toobigs =find(fdiam(NNN+NCS+1:NCS+NNN+NND)>500e-6);
+toosmalls =find(fdiam(NNN+NCS+1:NCS+NNN+NND)<2.5e-6);
 sndl(toobigs,:,:)=0;
 sndl(toosmalls,:,:)=0;
 fdiamlisst = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*ml)...
@@ -262,7 +261,7 @@ for ii=1:nt
       t,pf.N,pf.Ca,-pf.p,pf.r2);
    text(.2,1.5,ts)
    shg
-   pause(.2)
+   %pause(.2)
    pfa(ic)=pf;
    pfsa(ic)=pfs;
    pfma(ic)=pfm;
@@ -274,32 +273,55 @@ end
 %% plot the pfit results
 figure(2); clf
 subplot(411)
-plot(s2d*ocean_time,zeros(size(ocean_time)),'--k')
+plot(s2d*ocean_time,zeros(size(ocean_time)),'--k');
 hold on
-h1=plot(s2d*ocean_time,sign(bustrc).*ustrc,'linewidth',2,'color',[.1 .1 .4])
-h2=plot(s2d*ocean_time,ustrcw,'linewidth',2,'color',[.3 .3 .6])
+h1=plot(s2d*ocean_time,sign(bustrc).*ustrc,'linewidth',2,'color',[.1 .1 .4]);
+h2=plot(s2d*ocean_time,ustrcw,'linewidth',2,'color',[.3 .3 .6]);
 
 subplot(412)
-h1=plot(s2d*ocean_time,-1e3*[pfa.p]'.*(0.41*ustrc),'linewidth',2)
+h1=plot(s2d*ocean_time,-1e3*[pfa.p]'.*(0.41*ustrc),'linewidth',2);
 hold on
-h2=plot(s2d*ocean_time,-1e3*[pfsa.p]'.*(0.41*ustrc),'linewidth',2)
-h3=plot(s2d*ocean_time,-1e3*[pfma.p]'.*(0.41*ustrc),'linewidth',2)
-h4=plot(s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2)
-h5=plot(s2d*ocean_time,-1e3*[pfac9.p]'.*(0.41*ustrc),'linewidth',2)
-h6=plot(s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2)
-legend([h1;h2;h3;h4;h5;h6],'All','Sand','Flocs','2.5 MHz','ac9','LISST')
+h2=plot(s2d*ocean_time,-1e3*[pfsa.p]'.*(0.41*ustrc),'linewidth',2);
+h3=plot(s2d*ocean_time,-1e3*[pfma.p]'.*(0.41*ustrc),'linewidth',2);
+h4=plot(s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2);
+h5=plot(s2d*ocean_time,-1e3*[pfac9.p]'.*(0.41*ustrc),'linewidth',2);
+h6=plot(s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2);
+legend([h1;h2;h3;h4;h5;h6],'All','Sand','Flocs','2.5 MHz','ac9','LISST');
 
 subplot(413)
-h1=plot(s2d*ocean_time,[pfa.p],'linewidth',2)
+h1=plot(s2d*ocean_time,[pfa.p],'linewidth',2);
 hold on
-h2=plot(s2d*ocean_time,[pfv.p],'linewidth',2)
-h3=plot(s2d*ocean_time,[pfac9.p],'linewidth',2)
-h4=plot(s2d*ocean_time,[pfalisst.p],'linewidth',2)
-legend([h1;h2;h3;h4],'Mass','2.5 MHz','ac9','LISST')
+h2=plot(s2d*ocean_time,[pfv.p],'linewidth',2);
+h3=plot(s2d*ocean_time,[pfac9.p],'linewidth',2);
+h4=plot(s2d*ocean_time,[pfalisst.p],'linewidth',2);
+legend([h1;h2;h3;h4],'Mass','2.5 MHz','ac9','LISST');
 subplot(414)
-h1=plot(s2d*ocean_time,[pfa.r2],'linewidth',2)
+h1=plot(s2d*ocean_time,[pfa.r2],'linewidth',2);
 hold on
-h2=plot(s2d*ocean_time,[pfv.r2],'linewidth',2)
-h3=plot(s2d*ocean_time,[pfac9.r2],'linewidth',2)
-h4=plot(s2d*ocean_time,[pfalisst.r2],'linewidth',2)
-legend([h1;h2;h3;h4],'Mass','2.5 MHz','ac9','LISST')
+h2=plot(s2d*ocean_time,[pfv.r2],'linewidth',2);
+h3=plot(s2d*ocean_time,[pfac9.r2],'linewidth',2);
+h4=plot(s2d*ocean_time,[pfalisst.r2],'linewidth',2);
+legend([h1;h2;h3;h4],'Mass','2.5 MHz','ac9','LISST');
+%% compare with data
+% add .7
+figure(3); clf
+h6=plot( (18./24.)+s2d*ocean_time,rho0*ustrcw.^2,'linewidth',2);
+hold on
+h2=plot(ydd,rho0*ustrcw2h.^2,'linewidth',2);
+%%
+figure(4); clf
+h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2);
+hold on
+h2=plot(ydd,1000*abss2_ws2h,'linewidth',2);
+%%
+figure(5); clf
+h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2);
+hold on
+h2=plot(ydd,1000*LISSTattn_ws2h,'linewidth',2);
+%%
+figure(6); clf
+h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(10,:),'linewidth',2);
+hold on
+h2=plot(ydd,NX(:,9),'linewidth',2);
+h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(2,:),'linewidth',2);
+h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(30,:),'linewidth',2);
