@@ -212,8 +212,14 @@ fdiamall = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*m)...
    +        sum(repmat(fdiam(NNN+NCS+1:NCS+NNN+NND),1,nz,nt).*snd))...
    ./(sum(snd)+sum(m)));
 %% fdiamlisst - same calc, but omit diameters outside LISST range
-ml = m(1:NCS,:,:);
-sndl = snd;
+% calc weighting for convertion to volume concentrations
+fvwht=1. ./rhos(1:NCS)
+svwht= 1. ./rhos(NNN+NCS+1:NCS+NNN+NND)
+% copy mass concentrations
+ml = m(1:NCS,:,:).*repmat(fvwht,1,nz,nt);
+sndl = snd.*repmat(svwht,1,nz,nt);
+
+% elimnate sizes outside LISST range
 toobig = find(fdiam(1:NCS)>500e-6);
 toosmall = find(fdiam(1:NCS)<2.5e-6);
 ml(toobig,:,:)=0;
@@ -227,6 +233,7 @@ fdiamlisst = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*ml)...
    ./squeeze(sum(sndl)+sum(ml));
 %% calculate apparent settling velocity
 s2d = 1. /(3600.*24.);
+K25 = 1./15.% arbitrary scaling coefficent (say system constant) for ABSS
 ic = 1;
 iz = 2:10;
 za = 0.1;
@@ -245,7 +252,7 @@ for ii=1:nt
    c = squeeze(muds(iz,ii));
    pfm = pfit( c, z, 1, za);
    
-   c = squeeze(vcomb25(iz,ii));
+   c = squeeze(vcomb25(iz,ii)*K25);
    pfvcombc = pfit( c, z, 0, za);
    c = squeeze(r_ac9c(iz,ii));
    pfac9c = pfit( c, z, 0, za);
@@ -310,18 +317,59 @@ hold on
 h2=plot(ydd,rho0*ustrcw2h.^2,'linewidth',2);
 %%
 figure(4); clf
-h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2);
+ok = find(abss2_r22h>0.8);
+h2=plot(ydd(ok),1000*abss2_ws2h(ok),'linewidth',2);
 hold on
-h2=plot(ydd,1000*abss2_ws2h,'linewidth',2);
+h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2);
+
+title('ABSS Settling Velocity')
 %%
 figure(5); clf
 h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2);
-hold on
-h2=plot(ydd,1000*LISSTattn_ws2h,'linewidth',2);
+hold on 
+ok = find(LISSTattn_r22h>0.8);
+h2=plot(ydd(ok),1000*LISSTattn_ws2h(ok),'linewidth',2);
+title('LISST Settling Velocity')
 %%
 figure(6); clf
 h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(10,:),'linewidth',2);
 hold on
-h2=plot(ydd,NX(:,9),'linewidth',2);
 h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(2,:),'linewidth',2);
 h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(30,:),'linewidth',2);
+hold on
+h2=plot(ydd,NX(:,9),'linewidth',2);
+title('LISST D50')
+%%
+% model elev(2) is 0.23 m, elevl(8) is 1.6 ma
+% data bin(1) is .15 m, bin(9) is 1.72
+% 15 is an calibration constant...could be, say, the system constant for
+% the modeled ABSS values
+
+figure(7); clf
+h3=plot(ydd,NX(:,24),'linewidth',2);
+hold on
+set(h3,'color',[.2 .2 .2])
+h4=plot(ydd,NX(:,27),'linewidth',2);
+set(h4,'color',[.4 .4 .4])
+h1=plot( (18./24.)+s2d*ocean_time,vcomb25(8,:)*K25,'linewidth',2);
+
+h2=plot( (18./24.)+s2d*ocean_time,vcomb25(2,:)*K25,'linewidth',2);
+set(h1,'color',[.5 .2 .2])
+set(h2,'color',[.7 .4 .4])
+legend([h3;h4;h1;h2],'Meas. 1.7 mab','Meas. 0.15 mab','Model 1.6 mab','Model 0.15 mab')
+ylim([0 .05])
+ylabel('Concentration (kg/m^3)')
+title('2.5 MHz ABSS')
+%% align
+imodel = interp1(s2d*ocean_time,vcomb25(8,:)*K25,ydd,'nearest');
+s1 = skill(imodel,NX(:,24))
+figure(8)
+plot(NX(:,24),imodel,'ok')
+hold on
+imodel = interp1(s2d*ocean_time,vcomb25(2,:)*K25,ydd,'nearest');
+s2 = skill(imodel,NX(:,27))
+plot(NX(:,24),imodel,'or')
+axis([0 .01 0 .01])
+axis('square')
+
+
