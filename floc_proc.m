@@ -1,7 +1,11 @@
 % floc_proc.m - Script to read and plot ROMS .his files
-cas = 99
+
+% disable next three variables if running many cases:
+% cas = 107
+% fid = 1;
+% iplot = 0; % if true, save plots
+
 fn = 0;
-iplot = 0; % if true, save plots
 %url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
 url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
@@ -234,12 +238,16 @@ fdiamlisst = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*ml)...
 %% calculate apparent settling velocity
 s2d = 1. /(3600.*24.);
 K25 = 1./15.% arbitrary scaling coefficent (say system constant) for ABSS
+fprintf(fid,'K25 = %d\n',K25)
 ic = 1;
-iz = 2:10;
+izfirst = find(elev>=0.3,1,'first');
+izlast = find(elev<=1.9,1,'last');
+iz = izfirst:izlast;
 za = 0.1;
 z=elev(iz);
-fprintf(1,'Elevations for pfit:');
-disp(z)
+fprintf(fid,'Elevations for pfit between 0.3 and 1.9:\n');
+for ii=1:length(iz),fprintf(fid,'  %d  %f\n',iz(ii),z(ii));,end
+
 clear pfa pfs pfm pfv pfac9 pfalisst
 for ii=1:nt
    figure(1); clf
@@ -309,20 +317,25 @@ h2=plot(s2d*ocean_time,[pfv.r2],'linewidth',2);
 h3=plot(s2d*ocean_time,[pfac9.r2],'linewidth',2);
 h4=plot(s2d*ocean_time,[pfalisst.r2],'linewidth',2);
 legend([h1;h2;h3;h4],'Mass','2.5 MHz','ac9','LISST');
+pfn = sprintf('pfit_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %% compare with data
 % add .7
 figure(3); clf
 h6=plot( (18./24.)+s2d*ocean_time,rho0*ustrcw.^2,'linewidth',2);
 hold on
 h2=plot(ydd,rho0*ustrcw2h.^2,'linewidth',2);
+pfn = sprintf('ustrcw_data_model_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %%
 figure(4); clf
 ok = find(abss2_r22h>0.8);
 h2=plot(ydd(ok),1000*abss2_ws2h(ok),'linewidth',2);
 hold on
 h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2);
-
 title('ABSS Settling Velocity')
+pfn = sprintf('abss_ws_data_model_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %%
 figure(5); clf
 h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2);
@@ -330,6 +343,8 @@ hold on
 ok = find(LISSTattn_r22h>0.8);
 h2=plot(ydd(ok),1000*LISSTattn_ws2h(ok),'linewidth',2);
 title('LISST Settling Velocity')
+pfn = sprintf('LISST_ws_data_model_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %%
 figure(6); clf
 h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(10,:),'linewidth',2);
@@ -339,6 +354,8 @@ h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(30,:),'linewidth',2);
 hold on
 h2=plot(ydd,NX(:,9),'linewidth',2);
 title('LISST D50')
+pfn = sprintf('LISST_D50_data_model_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %%
 % model elev(2) is 0.23 m, elevl(8) is 1.6 ma
 % data bin(1) is .15 m, bin(9) is 1.72
@@ -353,23 +370,44 @@ h4=plot(ydd,NX(:,27),'linewidth',2);
 set(h4,'color',[.4 .4 .4])
 h1=plot( (18./24.)+s2d*ocean_time,vcomb25(8,:)*K25,'linewidth',2);
 
-h2=plot( (18./24.)+s2d*ocean_time,vcomb25(2,:)*K25,'linewidth',2);
+h2=plot( (18./24.)+s2d*ocean_time,(vcomb25(2,:)+vcomb25(3,:))*K25/2,'linewidth',2);
 set(h1,'color',[.5 .2 .2])
 set(h2,'color',[.7 .4 .4])
 legend([h3;h4;h1;h2],'Meas. 1.7 mab','Meas. 0.15 mab','Model 1.6 mab','Model 0.15 mab')
 ylim([0 .05])
 ylabel('Concentration (kg/m^3)')
 title('2.5 MHz ABSS')
+pfn = sprintf('abss_data_model_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
 %% align
-imodel = interp1(s2d*ocean_time,vcomb25(8,:)*K25,ydd,'nearest');
+% index in elev
+iizhi = find(elev>=1.9,1,'first');
+fprintf(fid,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizhi,elev(iizhi))
+iizlo = find(elev>=0.2,1,'first');
+fprintf(fid,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizlo,elev(iizlo))
+
+fprintf(fid,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizhi))
+imodel = interp1(s2d*ocean_time,vcomb25(iizhi,:)*K25,ydd,'nearest');
 s1 = skill(imodel,NX(:,24))
-figure(8)
+[rmsd_star,bias,r]=target_diagram(imodel,NX(:,24));
+fprintf(fid,'%6.2f %6.2f %6.2f %6.2f %6.2f\n',s1.willmott,s1.brier,s1.RMS,rmsd_star,bias,r)
+
+
+figure(8); clf
 plot(NX(:,24),imodel,'ok')
 hold on
-imodel = interp1(s2d*ocean_time,vcomb25(2,:)*K25,ydd,'nearest');
+fprintf(fid,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizlo))
+imodel = interp1(s2d*ocean_time,vcomb25(iizlo,:)*K25,ydd,'nearest');
 s2 = skill(imodel,NX(:,27))
+[rmsd_star,bias,r]=target_diagram(imodel,NX(:,27));
+fprintf(fid,'%6.2f %6.2f %6.2f %6.2f %6.2f\n',s2.willmott,s2.brier,s2.RMS,rmsd_star,bias,r)
 plot(NX(:,24),imodel,'or')
 axis([0 .01 0 .01])
+xlabel('Data')
+ylabel('Model')
 axis('square')
+pfn = sprintf('abss_data_model_scatter_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
+
 
 
