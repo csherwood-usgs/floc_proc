@@ -238,15 +238,15 @@ fdiamlisst = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*ml)...
 %% calculate apparent settling velocity
 s2d = 1. /(3600.*24.);
 K25 = 1./15.% arbitrary scaling coefficent (say system constant) for ABSS
-fprintf(fid,'K25 = %d\n',K25)
+fprintf(1,'K25 = %d\n',K25)
 ic = 1;
 izfirst = find(elev>=0.3,1,'first');
 izlast = find(elev<=1.9,1,'last');
 iz = izfirst:izlast;
 za = 0.1;
 z=elev(iz);
-fprintf(fid,'Elevations for pfit between 0.3 and 1.9:\n');
-for ii=1:length(iz),fprintf(fid,'  %d  %f\n',iz(ii),z(ii));,end
+fprintf(1,'Elevations for pfit between 0.3 and 1.9:\n');
+for ii=1:length(iz),fprintf(1,'  %d  %f\n',iz(ii),z(ii));,end
 
 clear pfa pfs pfm pfv pfac9 pfalisst
 for ii=1:nt
@@ -382,25 +382,25 @@ if(iplot),print('-dpng','-r300',pfn); end
 %% align
 % index in elev
 iizhi = find(elev>=1.9,1,'first');
-fprintf(fid,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizhi,elev(iizhi))
+fprintf(1,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizhi,elev(iizhi))
 iizlo = find(elev>=0.2,1,'first');
-fprintf(fid,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizlo,elev(iizlo))
+fprintf(1,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizlo,elev(iizlo))
 
-fprintf(fid,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizhi))
+fprintf(1,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizhi))
 imodel = interp1(s2d*ocean_time,vcomb25(iizhi,:)*K25,ydd,'nearest');
 s1 = skill(imodel,NX(:,24))
 [rmsd_star,bias,r]=target_diagram(imodel,NX(:,24));
-fprintf(fid,'%6.2f %6.2f %6.2f %6.2f %6.2f\n',s1.willmott,s1.brier,s1.RMS,rmsd_star,bias,r)
+fprintf(fid,'%6.2f, %6.2f, %6.3f, %6.2f, %6.2f, %6.2f, ',s1.willmott,s1.brier,s1.RMS,rmsd_star,bias,r)
 
 
 figure(8); clf
 plot(NX(:,24),imodel,'ok')
 hold on
-fprintf(fid,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizlo))
+fprintf(1,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizlo))
 imodel = interp1(s2d*ocean_time,vcomb25(iizlo,:)*K25,ydd,'nearest');
 s2 = skill(imodel,NX(:,27))
 [rmsd_star,bias,r]=target_diagram(imodel,NX(:,27));
-fprintf(fid,'%6.2f %6.2f %6.2f %6.2f %6.2f\n',s2.willmott,s2.brier,s2.RMS,rmsd_star,bias,r)
+fprintf(fid,'%6.2f, %6.2f, %6.3f, %6.2f, %6.2f, %6.2f, ',s2.willmott,s2.brier,s2.RMS,rmsd_star,bias,r)
 plot(NX(:,24),imodel,'or')
 axis([0 .01 0 .01])
 xlabel('Data')

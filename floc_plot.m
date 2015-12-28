@@ -3,7 +3,8 @@ set_colors
 s2d = 1. /(3600.*24.);
 % index in elev
 iiz = find(elev>=0.5,1,'first');
-fprintf(fid,'in floc_plot, iiz = %d and elev(iiz) = %f\n',iiz,elev(iiz))
+fprintf(1,'in floc_plot, iiz = %d and elev(iiz) = %f\n',iiz,elev(iiz))
+fprintf(fid,'%d, %d, %d, %3.1f, ',nz,NCS,iiz,elev(iiz))
 % text string for plot labels
 ets = sprintf(' at z = %4.1f mab',elev(iiz));
 %% floc conc plots - pcolor version = muds, wst, fdiamt
@@ -81,8 +82,9 @@ set(gca,'fontsize',14)
 xlabel('Days','fontsize',16)
 pfn=sprintf('floc+sand_size_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-fprintf(fid,'Mean conc and size at %f mab:\n  flocs: %f %5.1f\n   sand: %f %5.1f\n',...
-   elev(iiz),nanmean(muds(iiz,:)),nanmean(1e6*fdiamt(iiz,:)),...
+%fprintf(fid,'Mean conc and size at %f mab:\n  flocs: %f %5.1f\n   sand: %f %5.1f\n',...
+fprintf(fid,'%7.4f, %5.1f, %7.4f, %5.1f\n',...
+   nanmean(muds(iiz,:)),nanmean(1e6*fdiamt(iiz,:)),...
    nanmean(snds(iiz,:)),nanmean(1e6*fdiamsdt(iiz,:)))
 
 %% line plots of concs and diam

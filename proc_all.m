@@ -2,24 +2,24 @@
 
 clear
 fdyn % load measurements
-iplot = 1;
+iplot = 0;
+topdir = pwd;
 % caslist = [ 99; 101; 105; 106; 107 ];
-% caslist = [103; 104; 108; 109]
-caslist = [108; 109]
+caslist = [99; 101; 103; 104; 105; 107; 108; 109; 110 ];
 elevlist = [0.5; 1.0; 2.]
+fid = fopen('sens.txt','a+');
+
 for ics = 1:length(caslist)
    cas = caslist(ics)
+   fprintf(fid,'%d ,',cas);
    casdir = ['case_',num2str(cas)]
    mkdir(casdir)
    cd(casdir)
-   logfn = [casdir,'.txt']
-   fid = fopen(logfn,'w');
-   fprintf(fid,'%s\n',casdir);
    
    floc_proc
    floc_plot
-   
-   fclose(fid)
-   cd('..')
+
+   cd(topdir)
 end
-   
+fclose(fid)
+
