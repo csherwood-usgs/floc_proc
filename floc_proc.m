@@ -79,7 +79,7 @@ for n=1:nt
       5, h, zeta(n),0))';
 end
 dzw = diff(z_w,1,1);
-tz = repmat(ocean_time',50,1);
+tz = repmat(ocean_time',nz,1);
 elev = h+z_w(:,1);
 %% Read in stresses
 rho0 = ncread(url,'rho0');
