@@ -2,10 +2,10 @@
 
 clear
 fdyn % load measurements
-iplot = 0;
+iplot = 1;
 topdir = pwd;
-% caslist = [ 99; 101; 105; 106; 107 ];
-caslist = [99; 101; 103; 104; 105; 107; 108; 109; 110 ];
+% caslist = [99; 101; 103; 104; 105; 106; 107; 108; 109; 110; 114 ];
+caslist = [114];
 elevlist = [0.5; 1.0; 2.]
 fid = fopen('sens.txt','a+');
 
