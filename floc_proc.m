@@ -5,7 +5,12 @@
 % fid = 1;
 % iplot = 0; % if true, save plots
 
-fn = 0;
+% convert seconds to days
+s2d = 1. /(3600.*24.);
+
+% File with case info
+fprintf(fid2,'%d, ',cas)
+
 %url = sprintf('ocean_his%2d.nc',cas)
 % url = 'http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_44.nc'
 url = sprintf('http://geoport.whoi.edu/thredds/dodsC/clay/usgs/users/aretxabaleta/MVCO/ocean_his_%02d.nc', cas)
@@ -28,6 +33,7 @@ if cas >= 66 & cas <=93
    NND = 4  % these interact with the bed
    NCS = NST-(NNN+NND)
 end
+fprintf(fid2,'%d, %d, ',NCS,NST);
 %% Read in basic info
 ocean_time = ncread(url,'ocean_time');
 h = ncread(url,'h');
@@ -48,6 +54,7 @@ s_rho = ncread(url,'s_rho');
 s_w = ncread(url,'s_w');
 nt = length(ocean_time)
 nz = length(s_rho)
+fprintf(fid2,'%d, %d, ',nt,nz);
 %% Read in sediment sizes
 fdiam = ncread(url,'Sd50');
 ws = ncread(url,'Wsed');
@@ -81,6 +88,10 @@ end
 dzw = diff(z_w,1,1);
 tz = repmat(ocean_time',nz,1);
 elev = h+z_w(:,1);
+mean_dz = mean(dzw(:));
+% index for cell closest to 0.5 m
+iz50 = find(elev>=(0.5-(0.5*mean_dz)),1,'first');
+fprintf(fid2,'%4.2f, %d, %4.2f, ',mean_dz,iz50,elev(iz50));
 %% Read in stresses
 rho0 = ncread(url,'rho0');
 bustrc=squeeze(ncread(url,'bustrc',[i j 1],[1 1 Inf]));
@@ -99,6 +110,10 @@ for n=1:NCS
 end
 muds = squeeze(sum(m));
 summuds = sum( muds.*dzw);
+% characterize mud load at 0.5 mab (skip first six hours...startup)
+mean_mud_conc = mean(muds(iz50,6:end));
+max_mud_conc = max(muds(iz50,6:end));
+fprintf(fid2,'%9.6f, %9.6f, ',mean_mud_conc,max_mud_conc);
 %% read 15 non-depositing classes, one cell only, for 1D results
 if(0)
    load_non
@@ -113,6 +128,10 @@ for n=NNN+1:NNN+NND
 end
 snds = squeeze(sum(snd));
 sumsnds = sum( snds.*dzw);
+% characterize sand load (skip first six hours...startup)
+mean_sand_conc = mean(snds(iz50,6:end));
+max_sand_conc = max(snds(iz50,6:end));
+fprintf(fid2,'%9.6f, %9.6f, ',mean_sand_conc,max_sand_conc);
 %% v1, v25, v4 - acoustic response to flocs
 Dfv = fdiam(1:NCS);
 rhofv = rhos(1:NCS);
@@ -139,6 +158,20 @@ for jj=1:nt
       vsn1(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,1e6);
       vsn25(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,2.5e6);
       vsn4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
+   end
+end
+%% vcomb1, vcomb25, vcomb4 - floc + sand combined acoustic response
+Dfv = [fdiam(1:NCS); fdiam(NNN+NCS+1:NCS+NNN+NND) ];
+rhofv = [rhos(1:NCS); rhos(NNN+NCS+1:NCS+NNN+NND) ];
+vcomb1 = zeros(nz,nt);
+vcomb25 = zeros(nz,nt);
+vcomb4 = zeros(nz,nt);
+for jj=1:nt
+   for ii=1:nz
+      mv = [squeeze(m(:,ii,jj)); squeeze(snd(:,ii,jj))];
+      vcomb1(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,1e6);
+      vcomb25(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,2.5e6);
+      vcomb4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
    end
 end
 %%  r_ac9f, r_lisstf - optical response to flocs of ac9 and LISST
@@ -197,25 +230,74 @@ for jj=1:nt
 end
 stats(r_ac9c(3,:));
 stats(r_lisstc(3,:));
-%% vcomb1, vcomb25, vcomb4 - floc + sand combined acoustic response
-Dfv = [fdiam(1:NCS); fdiam(NNN+NCS+1:NCS+NNN+NND) ];
-rhofv = [rhos(1:NCS); rhos(NNN+NCS+1:NCS+NNN+NND) ];
-vcomb1 = zeros(nz,nt);
-vcomb25 = zeros(nz,nt);
-vcomb4 = zeros(nz,nt);
-for jj=1:nt
-   for ii=1:nz
-      mv = [squeeze(m(:,ii,jj)); squeeze(snd(:,ii,jj))];
-      vcomb1(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,1e6);
-      vcomb25(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,2.5e6);
-      vcomb4(ii,jj) = acoustics(Dfv(:),mv(:),rhofv(:),.2,4e6);
-   end
-end
-%% fdiamall - fraction-weighted size of both sand and flocs - fdiamall
+%% calculate the ac9 posteriori calibration coefficient for the ac9 at 1 mab
+% this is at circa one meter...and gets overwritten for all depths in the
+% next section
+model_mass_conc = squeeze( sum(m(:,iz50,:)) + sum(snd(:,iz50,:)));
+ac9_response = r_ac9c(iz50,:);
+abss25_response = vcomb25(iz50,:);
+
+model_color = [.8 .2 .2];
+data_color = [.3 .3 .3];
+figure(1); clf;
+% ac9
+subplot(221)
+[ac9_offset,ac9_slope,ac9_r2, sa, sb, hdot ] = lsfit(model_mass_conc(model_mass_conc<.4),ac9_response(model_mass_conc<.4)',1)
+xlim([0. .25])
+title('ac9')
+xlabel('Modeled Concentration (kg/m^3)')
+ylabel('Modeled ac9 Response')
+ts = sprintf('%8.4f x C + %8.4f\nr^2 = %4.2f',ac9_slope,ac9_offset,ac9_r2)
+ax = axis;
+ht = text(.05*ax(2),.9*ax(4),ts);
+fprintf(fid2,'%8.4f, %8.4f, %4.2f',ac9_slope,ac9_offset,ac9_r2)
+
+subplot(223)
+h1=plot(s2d*ocean_time, model_mass_conc,'linewidth',2,'color',data_color);
+hold on
+h2=plot(s2d*ocean_time,(ac9_response-ac9_offset)/ac9_slope,'linewidth',2,'color',model_color );
+ylim([0 .25])
+ylabel('Concentration (kg/m^3)')
+legend([h1;h2],'Modeled Concentration','Modeled Response','location','southeast')
+xlabel('Time (days)')
+
+% ABSS
+subplot(222)
+[abss_offset,abss_slope,abss_r2, sa, sb, hdot ] = lsfit(model_mass_conc(model_mass_conc<.4),abss25_response(model_mass_conc<.4)',1)
+xlim([0. .25])
+title('2.5 MHz ABSS Response')
+xlabel('Modeled Concentration (kg/m^3)')
+ylabel('Modeled ABSS Response')
+ts = sprintf('%8.4f x C + %8.4f\nr^2 = %4.2f',abss_slope,abss_offset,abss_r2)
+ax = axis;
+ht = text(.05*ax(2),.9*ax(4),ts);
+fprintf(fid2,'%8.4f, %8.4f, %4.2f',abss_slope,abss_offset,abss_r2)
+
+subplot(224)
+h1=plot(s2d*ocean_time, model_mass_conc,'linewidth',2,'color',data_color);
+hold on
+h2=plot(s2d*ocean_time,(abss25_response-abss_offset)/abss_slope,'linewidth',2,'color',model_color );
+%h2=plot(s2d*ocean_time,(abss25_response)/abss_slope,'linewidth',2,'color',model_color );
+legend([h1;h2],'Modeled Concentration','Modeled Response','location','southeast')
+ylim([0 .25])
+ylabel('Concentration (kg/m^3)')
+xlabel('Time (days)')
+
+pfn = sprintf('calib_plot_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
+%%
+model_mass_conc = squeeze( sum(m(:,:,:)) + sum(snd(:,:,:)));
+model_ac9_response = (r_ac9c(:,:)-ac9_offset)/ac9_slope;
+% include the offset
+model_abss25_response = (vcomb25(:,:)-abss_offset)/abss_slope; 
+% ...or neglect the offset
+%model_abss25_response = (vcomb25(:,:))/abss_slope;
+%% fdiamall - mass fraction-weighted size of both sand and flocs - fdiamall
 fdiamall = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*m)...
    +        sum(repmat(fdiam(NNN+NCS+1:NCS+NNN+NND),1,nz,nt).*snd))...
    ./(sum(snd)+sum(m)));
-%% fdiamlisst - same calc, but omit diameters outside LISST range
+all_d50 = 1e6*median(fdiamall(iz50,6:end))
+%% fdiamlisst - volume fraction-weighted size, omit diameters outside LISST range - fdiamlisst
 % calc weighting for convertion to volume concentrations
 fvwht=1. ./rhos(1:NCS)
 svwht= 1. ./rhos(NNN+NCS+1:NCS+NNN+NND)
@@ -235,10 +317,9 @@ sndl(toosmalls,:,:)=0;
 fdiamlisst = squeeze((sum(repmat(fdiam(1:NCS),1,nz,nt).*ml)...
    +                 sum(repmat(fdiam(NNN+NCS+1:NCS+NNN+NND),1,nz,nt).*sndl))) ...
    ./squeeze(sum(sndl)+sum(ml));
+lisst_d50 = 1e6*median(fdiamlisst(iz50,6:end))
+fprintf(fid2,'%6.1f, %6.1f, ',all_d50,lisst_d50)
 %% calculate apparent settling velocity
-s2d = 1. /(3600.*24.);
-K25 = 1./15.% arbitrary scaling coefficent (say system constant) for ABSS
-fprintf(1,'K25 = %d\n',K25)
 ic = 1;
 izfirst = find(elev>=0.3,1,'first');
 izlast = find(elev<=1.9,1,'last');
@@ -250,7 +331,7 @@ for ii=1:length(iz),fprintf(1,'  %d  %f\n',iz(ii),z(ii));,end
 
 clear pfa pfs pfm pfv pfac9 pfalisst
 for ii=1:nt
-   figure(1); clf
+   figure(2); clf
    t = s2d*ocean_time(ii);
    c = squeeze(muds(iz,ii)+snds(iz,ii));
    hold on
@@ -260,9 +341,9 @@ for ii=1:nt
    c = squeeze(muds(iz,ii));
    pfm = pfit( c, z, 1, za);
    
-   c = squeeze(vcomb25(iz,ii)*K25);
+   c = squeeze(model_abss25_response(iz,ii));
    pfvcombc = pfit( c, z, 0, za);
-   c = squeeze(r_ac9c(iz,ii));
+   c = squeeze(model_ac9_response(iz,ii));
    pfac9c = pfit( c, z, 0, za);
    c = squeeze(r_lisstc(iz,ii));
    pfalisstc = pfit( c, z, 0, za);
@@ -270,7 +351,7 @@ for ii=1:nt
    ylim( [.1 2.5] );
    xlim( [.01 1] );
    ylabel('Elevation (mab)')
-   xlabel('Attenuation ( m^{-1} )');
+   xlabel('Concentration ( m^{-1} )');
    
    ts = sprintf('%6.2f\nN=%d\nCa=%7.2f\np=% 5.2f\nr^2=%06.4f\n',...
       t,pf.N,pf.Ca,-pf.p,pf.r2);
@@ -286,14 +367,17 @@ for ii=1:nt
    ic = ic+1;
 end
 %% plot the pfit results
-figure(2); clf
-subplot(411)
+figure(3); clf
+subplot(311)
 plot(s2d*ocean_time,zeros(size(ocean_time)),'--k');
 hold on
 h1=plot(s2d*ocean_time,sign(bustrc).*ustrc,'linewidth',2,'color',[.1 .1 .4]);
 h2=plot(s2d*ocean_time,ustrcw,'linewidth',2,'color',[.3 .3 .6]);
+h3=plot(ydd-18./24.,ustrcw2h,'linewidth',2,'color',data_color);
+ylabel('{\it{u*, u*_{cw}}} (m/s)')
+legend([h3;h2;h1],'M94 {\itu*_{cw}}','Model {\itu*_{cw}}','Model {\itu*_c}')
 
-subplot(412)
+subplot(312)
 h1=plot(s2d*ocean_time,-1e3*[pfa.p]'.*(0.41*ustrc),'linewidth',2);
 hold on
 h2=plot(s2d*ocean_time,-1e3*[pfsa.p]'.*(0.41*ustrc),'linewidth',2);
@@ -302,15 +386,19 @@ h4=plot(s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2);
 h5=plot(s2d*ocean_time,-1e3*[pfac9.p]'.*(0.41*ustrc),'linewidth',2);
 h6=plot(s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2);
 legend([h1;h2;h3;h4;h5;h6],'All','Sand','Flocs','2.5 MHz','ac9','LISST');
+ylabel('{\it{w_s}} (mm/s)')
 
-subplot(413)
+if(0) % raw slopes...need this?
+   subplot(413)
 h1=plot(s2d*ocean_time,[pfa.p],'linewidth',2);
 hold on
 h2=plot(s2d*ocean_time,[pfv.p],'linewidth',2);
 h3=plot(s2d*ocean_time,[pfac9.p],'linewidth',2);
 h4=plot(s2d*ocean_time,[pfalisst.p],'linewidth',2);
 legend([h1;h2;h3;h4],'Mass','2.5 MHz','ac9','LISST');
-subplot(414)
+end
+
+subplot(313)
 h1=plot(s2d*ocean_time,[pfa.r2],'linewidth',2);
 hold on
 h2=plot(s2d*ocean_time,[pfv.r2],'linewidth',2);
@@ -319,67 +407,80 @@ h4=plot(s2d*ocean_time,[pfalisst.r2],'linewidth',2);
 legend([h1;h2;h3;h4],'Mass','2.5 MHz','ac9','LISST');
 pfn = sprintf('pfit_ts_%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-%% compare with data
-% add .7
-figure(3); clf
+ylabel('{\itr}^2')
+ylim([.5 1])
+
+pfn = sprintf('ustrcw_ws_r2_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
+%% compare with data - u*, u*cw
+% 
+% add .7 days to model time
+if(0)
+figure(4); clf
 h6=plot( (18./24.)+s2d*ocean_time,rho0*ustrcw.^2,'linewidth',2);
 hold on
 h2=plot(ydd,rho0*ustrcw2h.^2,'linewidth',2);
 pfn = sprintf('ustrcw_data_model_ts_%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-%%
-figure(4); clf
+end
+%% ABSS ws
+figure(5); clf
 ok = find(abss2_r22h>0.8);
-h2=plot(ydd(ok),1000*abss2_ws2h(ok),'linewidth',2);
+h1=plot(ydd(ok),1000*abss2_ws2h(ok),'linewidth',2,'color',data_color);
 hold on
-h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2);
+h2=plot( (18./24.)+s2d*ocean_time,-1e3*[pfv.p]'.*(0.41*ustrc),'linewidth',2,'color',model_color);
 title('ABSS Settling Velocity')
+ylabel('{\it{w_s}} (mm/s)')
+legend([h1;h2],'Data','Model')
 pfn = sprintf('abss_ws_data_model_ts_%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-%%
-figure(5); clf
-h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2);
+%% LISST ws
+figure(6); clf
+h2=plot( (18./24.)+s2d*ocean_time,-1e3*[pfalisst.p]'.*(0.41*ustrc),'linewidth',2,'color',model_color);
 hold on 
 ok = find(LISSTattn_r22h>0.8);
-h2=plot(ydd(ok),1000*LISSTattn_ws2h(ok),'linewidth',2);
+h1=plot(ydd(ok),1000*LISSTattn_ws2h(ok),'linewidth',2,'color',data_color);
 title('LISST Settling Velocity')
+ylabel('{\it{w_s}} (mm/s)')
+legend([h2;h1],'Model','Data')
 pfn = sprintf('LISST_ws_data_model_ts_%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-%%
-figure(6); clf
-h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(10,:),'linewidth',2);
+%% LISST D50
+figure(7); clf
+h2=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(10,:),'linewidth',2,'color',model_color*1.2);
 hold on
-h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(2,:),'linewidth',2);
-h6=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(30,:),'linewidth',2);
+h3=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(2,:),'linewidth',2,'color',model_color);
+%h4=plot( (18./24.)+s2d*ocean_time,1e6*fdiamlisst(30,:),'linewidth',2,'color',model_color);
 hold on
-h2=plot(ydd,NX(:,9),'linewidth',2);
+h1=plot(ydd,NX(:,9),'linewidth',2,'color',data_color);
 title('LISST D50')
+ylabel('{\itD}_{50} (\mum)')
+xlabel('Time (days)')
+legend([h1; h3],'Data','Model')
 pfn = sprintf('LISST_D50_data_model_ts_%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-%%
+%% ABSS Response
 % model elev(2) is 0.23 m, elevl(8) is 1.6 ma
 % data bin(1) is .15 m, bin(9) is 1.72
 % 15 is an calibration constant...could be, say, the system constant for
 % the modeled ABSS values
 
-figure(7); clf
-h3=plot(ydd,NX(:,24),'linewidth',2);
+figure(8); clf
+h3=plot(ydd,NX(:,24),'linewidth',2,'color',data_color);
 hold on
-set(h3,'color',[.2 .2 .2])
-h4=plot(ydd,NX(:,27),'linewidth',2);
+h4=plot(ydd,NX(:,27),'linewidth',2,'color',data_color*1.5);
 set(h4,'color',[.4 .4 .4])
-h1=plot( (18./24.)+s2d*ocean_time,vcomb25(8,:)*K25,'linewidth',2);
-
-h2=plot( (18./24.)+s2d*ocean_time,(vcomb25(2,:)+vcomb25(3,:))*K25/2,'linewidth',2);
-set(h1,'color',[.5 .2 .2])
-set(h2,'color',[.7 .4 .4])
+h1=plot( (18./24.)+s2d*ocean_time,model_abss25_response(8,:),'linewidth',2,'color',model_color);
+h2=plot( (18./24.)+s2d*ocean_time,(model_abss25_response(2,:)+model_abss25_response(3,:))/2,'linewidth',2,'color',model_color*1.2);
 legend([h3;h4;h1;h2],'Meas. 1.7 mab','Meas. 0.15 mab','Model 1.6 mab','Model 0.15 mab')
-ylim([0 .05])
+%ylim([0 .05])
 ylabel('Concentration (kg/m^3)')
 title('2.5 MHz ABSS')
+legend([h3;h1],'Data','Model')
+
 pfn = sprintf('abss_data_model_ts_%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
-%% align
+%% ABSS skill
 % index in elev
 iizhi = find(elev>=1.9,1,'first');
 fprintf(1,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizhi,elev(iizhi))
@@ -387,17 +488,16 @@ iizlo = find(elev>=0.2,1,'first');
 fprintf(1,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizlo,elev(iizlo))
 
 fprintf(1,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizhi))
-imodel = interp1(s2d*ocean_time,vcomb25(iizhi,:)*K25,ydd,'nearest');
+imodel = interp1(s2d*ocean_time,model_abss25_response(iizhi,:),ydd,'nearest');
 s1 = skill(imodel,NX(:,24))
 [rmsd_star,bias,r]=target_diagram(imodel,NX(:,24));
 fprintf(fid,'%6.2f, %6.2f, %6.3f, %6.2f, %6.2f, %6.2f, ',s1.willmott,s1.brier,s1.RMS,rmsd_star,bias,r)
 
-
-figure(8); clf
+figure(9); clf
 plot(NX(:,24),imodel,'ok')
 hold on
 fprintf(1,'Skill for modeled and measured 2.5 MHz ABSS at z=%6.2f\n',elev(iizlo))
-imodel = interp1(s2d*ocean_time,vcomb25(iizlo,:)*K25,ydd,'nearest');
+imodel = interp1(s2d*ocean_time,model_abss25_response(iizlo,:),ydd,'nearest');
 s2 = skill(imodel,NX(:,27))
 [rmsd_star,bias,r]=target_diagram(imodel,NX(:,27));
 fprintf(fid,'%6.2f, %6.2f, %6.3f, %6.2f, %6.2f, %6.2f, ',s2.willmott,s2.brier,s2.RMS,rmsd_star,bias,r)
@@ -407,6 +507,64 @@ xlabel('Data')
 ylabel('Model')
 axis('square')
 pfn = sprintf('abss_data_model_scatter_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
+
+%% ac9 trans
+
+% NX(3) is acn9 at 2 mab, NX(4) is ac9 at .9 mab
+% convert from 1/m to kg/m3  as done in ws_fit: allc = (allc*2.7)-1.3;
+figure(10); clf
+h3=plot(ydd,.01*(2.7*NX(:,3)-1.3),'linewidth',2);
+hold on
+set(h3,'color',[.2 .2 .2])
+h4=plot(ydd,.01*(2.7*NX(:,4)-1.3),'linewidth',2);
+set(h4,'color',[.4 .4 .4])
+h1=plot( (18./24.)+s2d*ocean_time,model_ac9_response(10,:),'linewidth',2);
+h2=plot( (18./24.)+s2d*ocean_time,model_ac9_response(5,:),'linewidth',2);
+title('ac9 SSC Estimates')
+ylabel('Concentration (kg/m^3)')
+ylim([ 0 .30 ])
+legend([h3;h4;h1;h2],'Data, 2 mab','Data, 1 mab','Model 0.9 mab','Model 2.1 mab') 
+pfn = sprintf('ac9_data_model_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
+%% Compare ac9 ws
+figure(11); clf
+h6=plot( (18./24.)+s2d*ocean_time,-1e3*[pfac9.p]'.*(0.41*ustrc),'linewidth',2);
+hold on 
+ok = find(UMEattn650_r22h>0.5);
+h2=plot(ydd(ok),1000*UMEattn650_ws2h(ok),'linewidth',2);
+title('ac9 Settling Velocity')
+pfn = sprintf('ac9_ws_data_model_ts_%2d.png',cas)
+if(iplot),print('-dpng','-r300',pfn); end
+
+%% align ac9 model and data, compute skill
+% index in elev
+iizhi = find(elev>=2.0,1,'first');
+fprintf(1,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizhi,elev(iizhi))
+iizlo = find(elev>=0.9,1,'first');
+fprintf(1,'in floc_plot, iiz = %d and elev(iiz) = %6.2f\n',iizlo,elev(iizlo))
+
+fprintf(1,'Skill for modeled and measured ac9 at z=%6.2f\n',elev(iizhi))
+imodel = interp1(s2d*ocean_time,model_ac9_response(iizhi,:),ydd,'nearest');
+s1 = skill(imodel,2.7*NX(:,3)-1.3)
+[rmsd_star,bias,r]=target_diagram(imodel,2.7*NX(:,3)-1.3);
+fprintf(fid,'%6.2f, %6.2f, %6.3f, %6.2f, %6.2f, %6.2f, ',s1.willmott,s1.brier,s1.RMS,rmsd_star,bias,r)
+
+figure(12); clf
+h1=plot(2.7*NX(:,3)-1.3,imodel,'ok')
+hold on
+
+fprintf(1,'Skill for modeled and measured ac9 at z=%6.2f\n',elev(iizlo))
+imodel = interp1(s2d*ocean_time,model_ac9_response(iizlo,:),ydd,'nearest');
+s2 = skill(imodel,2.7*NX(:,4)-1.3)
+[rmsd_star,bias,r]=target_diagram(imodel,2.7*NX(:,4)-1.3);
+fprintf(fid,'%6.2f, %6.2f, %6.3f, %6.2f, %6.2f, %6.2f, ',s2.willmott,s2.brier,s2.RMS,rmsd_star,bias,r)
+h2=plot(2.7*NX(:,4)-1.3,imodel,'or')
+%axis([0 .01 0 .01])
+xlabel('Data')
+ylabel('Model')
+axis('square')
+pfn = sprintf('ac9_data_model_scatter_%2d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 
 

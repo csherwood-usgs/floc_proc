@@ -8,7 +8,7 @@ fprintf(fid,'%d, %d, %d, %3.1f, ',nz,NCS,iiz,elev(iiz))
 % text string for plot labels
 ets = sprintf(' at z = %4.1f mab',elev(iiz));
 %% floc conc plots - pcolor version = muds, wst, fdiamt
-figure(9); clf
+figure(13); clf
 subplot(311)
 pcolorjw( s2d*tz, h+z_w, log10(muds+eps))
 caxis([-2.5 1.5])
@@ -37,7 +37,7 @@ pfn=sprintf('floc_conc_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 
 %% sand conc plots - snds, wssdt, fdiamsdt
-figure(10); clf
+figure(14); clf
 subplot(311)
 pcolorjw( s2d*tz, h+z_w, log10(snds+eps))
 set(gca,'xticklabel','','fontsize',14)
@@ -66,7 +66,7 @@ pfn=sprintf('sand_conc_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 
 %% fraction-weighted size of both sand and flocs - fdiamall
-figure(11); clf
+figure(15); clf
 subplot(211)
 h1=plot(s2d*ocean_time, 1e6*fdiamsdt(iiz,:) );
 hold on
@@ -88,7 +88,7 @@ fprintf(fid,'%7.4f, %5.1f, %7.4f, %5.1f\n',...
    nanmean(snds(iiz,:)),nanmean(1e6*fdiamsdt(iiz,:)))
 
 %% line plots of concs and diam
-figure(12); clf
+figure(16); clf
 h1=plot(s2d*ocean_time, snds(iiz,:),'linewidth',2,'color',sand_color);
 hold on
 h2=plot(s2d*ocean_time, muds(iiz,:),'linewidth',2,'color',floc_color);
@@ -102,7 +102,7 @@ title(['Modeled Concentration of Flocs and Sand',ets])
 legend([h1;h2;h3],'Sand','Flocs','Combined')
 
 %% line plots of combined conc and diam
-figure(13); clf
+figure(17); clf
 h1=plot(s2d*ocean_time, vcomb1(iiz,:),'linewidth',2,'color',abss1c_color);
 hold on
 h2=plot(s2d*ocean_time, vcomb4(iiz,:),'linewidth',2,'color',abss3c_color);
@@ -112,7 +112,7 @@ h4=plot(s2d*ocean_time, (r_lisstf(3,:)+r_lissts(iiz,:)+eps),'linewidth',2,'color
 title(['Combined Response to Flocs and Sand', ets])
 legend([h1;h2;h3;h4],'1 MHz ABSS','4 MHz ABSS','ac9','LISST')
 %% Plot acoustic response
-figure(14); clf
+figure(18); clf
 subplot(311)
 pcolorjw( s2d*tz, h+z_w, v25)
 colorbar
@@ -149,7 +149,7 @@ pfn=sprintf('both_acoustic_response_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 
 %% Plot optical responses - pcolor version
-figure(15); clf
+figure(19); clf
 subplot(311)
 pcolorjw( s2d*tz, h+z_w, log10(r_ac9f+eps))
 colorbar
@@ -184,7 +184,7 @@ ylim([0 3])
 pfn=sprintf('pcol_both_optical_response_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 %% line version
-figure(16); clf;
+figure(20); clf;
 h1=plot(s2d*ocean_time, r_ac9s(iiz,:),'linewidth',2,'color',ac9s_color);
 hold on
 h2=plot(s2d*ocean_time, r_ac9f(iiz,:),'linewidth',2,'color',ac9f_color);
@@ -196,7 +196,7 @@ legend([h1;h2;h3;h4],'ac9 sand','ac9 flocs','LISST sand','LISST flocs');
 pfn=sprintf('line_both_optical_response_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 %% time series of sand, flocs and combined masses
-figure(17); clf
+figure(21); clf
 h1=plot(s2d*ocean_time, vcomb1(iiz,:),'linewidth',2,'color',abss1c_color);
 hold on
 %h2=plot(s2d*ocean_time, vcomb4(iiz,:),'linewidth',2,'color',abss3c_color);
@@ -216,7 +216,7 @@ legend([h1;h3;h4],'1 MHz ABSS','ac9','LISST')
 % legend([h1;h2;h3;h4],'1 MHz ABSS','4 MHz ABSS','ac9','LISST')
 %%
 load cmap_plusminus
-figure(18)
+figure(22)
 pcolorjw( s2d*tz, h+z_w, vcomb25-vsn25)
 colorbar
 colormap(cmap_plusminus)
@@ -230,7 +230,7 @@ pfn=sprintf('acoustic_diff_run%02d.png',cas)
 if(iplot),print('-dpng','-r300',pfn); end
 %% overall acoustic response to conc
 tsed = muds+snds;
-figure(19); clf
+figure(23); clf
 h1=plot(tsed(:),vcomb25(:),'.','color',abss2c_color);
 set(h1,'markersize',14);
 hold on
